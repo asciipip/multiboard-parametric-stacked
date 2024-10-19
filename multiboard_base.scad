@@ -1,8 +1,11 @@
-x_cells = 8;
+x_cells = 6;
 y_cells = 6;
-type = "core"; // side or corner
 
-// eps = 0.01;
+core_tiles = 4;
+side_tiles = 4;
+corner_tiles = 1;
+
+layer_thickness = 0.2;
 
 // Main dimensions
 cell_size = 25;
@@ -44,6 +47,9 @@ small_thread_d2 = 6.069;
 small_thread_h1 = 0.768;
 small_thread_h2 = small_thread_pitch-0.5;
 small_thread_fn=32;
+
+// Distance between stacked layers
+stack_height = height + abs(-height % layer_thickness) + layer_thickness;
 
 
 module multiboard_core_base(x_cells, y_cells) {
@@ -339,14 +345,14 @@ module trapz_thread(d1, d2, h1, h2, thread_len, pitch) {
 }
 
 
-if (type == "core") {
+for (level = [0:1:core_tiles-1])
+  translate([0, 0, stack_height * level])
     multiboard_core(x_cells, y_cells);
-}
 
-if (type == "side") {
+for (level = [core_tiles:1:core_tiles+side_tiles-1])
+  translate([0, 0, stack_height * level])
     multiboard_side(x_cells, y_cells);
-}
 
-if (type == "corner") {
+for (level = [core_tiles+side_tiles:1:core_tiles+side_tiles+corner_tiles-1])
+  translate([0, 0, stack_height * level])
     multiboard_corner(x_cells, y_cells);
-}
