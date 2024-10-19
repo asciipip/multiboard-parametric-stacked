@@ -25,6 +25,8 @@ Set the following parameters (at the top of the file):
 Render the file and save to an STL.
 
 In your slicer, make sure you've enabled ironing of top surfaces.
+Otherwise, make sure you're using the recommended Multiboard printing
+parameters (3-line thick walls, 15% infill).
 
 After printing, it may take a little work to separate the tiles.  The
 author has had the best luck by pulling apart the corner closest to the
@@ -40,16 +42,16 @@ Multiboard has a video about how to print stacks:
 Stack-printed tiles will have one side that's smooth and the other side
 (the one on the bottom during printing) will be a bit rough.  This
 shouldn't be a problem if you're only planning on using one side of the
-files (e.g. if you're mounting the on a wall).
+files (e.g. if you're mounting them on a wall).
 
 You can print an entire set of tiles at once _as long as the tiles are
 square_.  If you're tiling non-square tiles, you'll need at least two
-separate stacks: one with the core tiles, the top (or bottom) side tiles,
-and the corner tile; the other with the right (or left) side tiles.
-That's because this generator always puts the side tile's teeth on the
-right side, and the right (or left) side tiles need the teeth on top.  For
-the right (or left) side tiles, swap the tile dimensions in the file
-parameters and just print side tiles.
+separate stacks: one stack with the core tiles, the top (or bottom) side
+tiles, and the corner tile; the other stack with the right (or left) side
+tiles.  That's because this generator always puts the side tile's teeth on
+the right side, and the right (or left) side tiles need the teeth on top.
+For the right (or left) side tiles, swap the tile X and Y dimensions in
+the file parameters and just print side tiles.
 
 Stack-printed tiles can be difficult to separate.  Ironing the tile
 surfaces is required, and you should have your printer calibrated as
@@ -60,12 +62,12 @@ Extended][] model from Uno.
   [Multiboard Parametric Extended]: https://www.printables.com/model/882280-multiboard-parametric-extended-openscad
 
 The author has only really tested this model with a 0.2 mm layer height.
-Multiboard components in general are designed with that layer height in
-general.  Although other layer heights _should_ work, they're
-less-guaranteed.  Feedback on others' experiences of printing with other
-thicknesses would be appreciated.  Note also that the model assumes that
-all layers have equal heights (as opposed to using a different thickness
-for the first layer).
+Multiboard components in general are designed to be printed with 0.2 mm
+layers.  Although other layer heights _should_ work with this model,
+they're less-guaranteed.  Feedback on others' experiences of printing with
+different thicknesses would be appreciated.  Note also that the model
+assumes all layers have equal heights (as opposed to using a
+different thickness for the first layer).
 
 
 ## Tile Stack Sizing
