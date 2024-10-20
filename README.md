@@ -9,7 +9,7 @@ This is an [OpenSCAD][] file for generating arbitrary stacked
 
 ## Usage
 
-Set the following parameters (at the top of the file):
+Set the following parameters:
 
  * `x_cells` – The number of cells (large holes) in the X direction
  * `y_cells` – The number of cells in the Y direction
@@ -24,9 +24,9 @@ Set the following parameters (at the top of the file):
 
 Render the file and save to an STL.
 
-In your slicer, make sure you've enabled ironing of top surfaces.
-Otherwise, make sure you're using the recommended Multiboard printing
-parameters (3-line thick walls, 15% infill).
+In your slicer, make sure you've enabled ironing of top surfaces.  In
+addition to that, make sure you're using the recommended Multiboard
+printing parameters (3-line thick walls, 15% infill).
 
 After printing, it may take a little work to separate the tiles.  The
 author has had the best luck by pulling apart the corner closest to the

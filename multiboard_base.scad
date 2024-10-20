@@ -24,17 +24,15 @@ layer_thickness = 0.2;
 
 // No user-servicable parts below this line.
 
-/* [Hidden] */
-
 // Main dimensions
-cell_size = 25;
-height = 6.4;
+cell_size = 25+0;
+height = 6.4+0;
 
-hole_thick = 3.6; // 3.280;
-hole_thick_height = 2.4;
-hole_thin = 1.6;
+hole_thick = 3.6+0; // 3.280;
+hole_thick_height = 2.4+0;
+hole_thin = 1.6+0;
 
-hole_rg_spiral_d=0.776;
+hole_rg_spiral_d=0.776+0;
 
 hole_sm_d = 6.069+0.025; // 7.5;
 
@@ -53,19 +51,19 @@ hole_thin_size = cell_size - hole_thin;
 hole_thin_side_l = hole_thin_size/(1+2*cos(45));
 hole_thin_bound_circle_d = hole_thin_side_l/sin(22.5);
 
-large_thread_d1 = 22.5; // hole_thin_size - 0.6;
-large_thread_d2 = hole_thick_size;
-large_thread_h1 = 0.5;
-large_thread_h2 = 1.583;
-large_thread_fn=32;
-large_thread_pitch = 2.5;
+large_thread_d1 = 22.5+0; // hole_thin_size - 0.6;
+large_thread_d2 = hole_thick_size+0;
+large_thread_h1 = 0.5+0;
+large_thread_h2 = 1.583+0;
+large_thread_fn=32+0;
+large_thread_pitch = 2.5+0;
 
-small_thread_pitch = 3;
-small_thread_d1 = 7.025;
-small_thread_d2 = 6.069;
-small_thread_h1 = 0.768;
+small_thread_pitch = 3+0;
+small_thread_d1 = 7.025+0;
+small_thread_d2 = 6.069+0;
+small_thread_h1 = 0.768+0;
 small_thread_h2 = small_thread_pitch-0.5;
-small_thread_fn=32;
+small_thread_fn=32+0;
 
 // Distance between stacked layers
 stack_height = height + abs(-height % layer_thickness) + layer_thickness;
