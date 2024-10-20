@@ -1,11 +1,30 @@
-x_cells = 6;
-y_cells = 6;
+/* [Tile Size] */
 
+// Number of cells along the X axis
+x_cells = 4;
+// Number of cells along the y axis
+y_cells = 4;
+
+/* [Tile Counts] */
+
+// Number of core tiles (teeth on the right and top)
 core_tiles = 4;
+
+// Number of side tiles (teeth only on the right)
 side_tiles = 4;
+
+// Number of corner tiles (no teeth)
 corner_tiles = 1;
 
+/* [Print Settings] */
+
+// Your slicer's layer thickness in millimeters; 0.2 mm is strongly recommended
 layer_thickness = 0.2;
+
+
+// No user-servicable parts below this line.
+
+/* [Hidden] */
 
 // Main dimensions
 cell_size = 25;
