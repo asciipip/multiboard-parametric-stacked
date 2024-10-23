@@ -14,6 +14,7 @@ import sys
 
 
 CELL_SIZE_MM = 25
+TOOTH_EXTRA_MM = 8
 MAX_DEFAULT_TILE_SIZE = 8
 
 
@@ -88,7 +89,7 @@ tiles; side and corner tiles might be truncated to fit in the space.""",
         args.height_mm = args.height * CELL_SIZE_MM
 
     if args.max_tile_size is None and args.max_tile_size_mm is not None:
-        args.max_tile_size = math.floor(args.max_tile_size_mm / CELL_SIZE_MM)
+        args.max_tile_size = math.floor((args.max_tile_size_mm - TOOTH_EXTRA_MM) / CELL_SIZE_MM)
 
     if args.max_tile_size is None:
         args.max_tile_size = MAX_DEFAULT_TILE_SIZE
