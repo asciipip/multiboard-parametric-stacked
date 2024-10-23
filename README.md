@@ -75,8 +75,8 @@ Extended][] model from Uno.
 
   [Multiboard Parametric Extended]: https://www.printables.com/model/882280-multiboard-parametric-extended-openscad
 
-The author has only really tested this model with a 0.2 mm layer height.
-Multiboard components in general are designed to be printed with 0.2 mm
+The author has only really tested this model with a 0.2 mm layer height.
+Multiboard components in general are designed to be printed with 0.2 mm
 layers.  Although other layer heights _should_ work with this model,
 they're less-guaranteed.  Feedback on others' experiences of printing with
 different thicknesses would be appreciated.  Note also that the model
@@ -86,11 +86,11 @@ different thickness for the first layer).
 
 ## Tile Stack Sizing
 
-To get the width of a tile, multiply the number of cells by 25 mm and then
-add 8 mm for the teeth.  Each layer is 6.6 mm high, when printed with a
-0.2 mm layer thickness.
+To get the width of a tile, multiply the number of cells by 25 mm and then
+add 8 mm for the teeth.  Each layer is 6.6 mm high, when printed with a
+0.2 mm layer thickness.
 
-A printer with a 220×220×250 mm print area can print up to 37 stacked 8×8
+A printer with a 220×220×250 mm print area can print up to 37 stacked 8×8
 tiles.
 
 
