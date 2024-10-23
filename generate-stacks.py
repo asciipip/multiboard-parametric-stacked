@@ -104,7 +104,7 @@ def determine_tile_size(args):
         args.tile_width = args.tile_height
         return
 
-    if args.width < args.max_tile_size and args.height < args.max_tile_size:
+    if args.width <= args.max_tile_size and args.height <= args.max_tile_size:
         # Only one tile is needed
         args.tile_width = args.width
         args.tile_height = args.height
