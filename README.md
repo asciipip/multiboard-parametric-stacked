@@ -11,7 +11,7 @@ This is an [OpenSCAD][] file for generating arbitrary stacked
 
 ## Usage
 
-Set the following parameters:
+Use the `multiboard_base.scad` file and set the following parameters:
 
  * `x_cells` – The number of cells (large holes) in the X direction
  * `y_cells` – The number of cells in the Y direction

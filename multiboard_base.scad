@@ -1,3 +1,6 @@
+// Model to generate stacks of Multiboard tiles for assembly into large
+// boards.
+
 /* [Tile Size] */
 
 // Number of cells along the X axis
