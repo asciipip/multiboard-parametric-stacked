@@ -23,7 +23,20 @@ def main():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(add_help=False)
+    parser = argparse.ArgumentParser(
+        description="Determines a reasonable set of Multiboard tiles to cover a given 2D space.",
+        epilog="""
+You must give the dimensions of the space to fill, either in millimeters
+(-w/--width-mm, -h/--height-mm) or in Multiboard cell counts
+(--width-cells, --height-cells).
+
+If you don't give your preferred tile size (--tile-width, --tile-height),
+the program will try to pick a reasonable size that minimizes the number
+of tiles needed and makes the side tiles as close as possible in size to
+the core tiles.  The preferred tile size will be applied to the core
+tiles; side and corner tiles might be truncated to fit in the space.""",
+        formatter_class=argparse.RawTextHelpFormatter,
+        add_help=False)
     parser.add_argument('--help', action='store_true', help='Show this help message and exit')
     parser.add_argument('-w', '--width-mm', metavar='MM', type=float,
                         help='Width of the board area, in mm')
@@ -33,11 +46,13 @@ def parse_args():
                         help='Width of the board area, in cells')
     parser.add_argument('--height-cells', metavar='CELLS', dest='height', type=int,
                         help='Height of the board area, in cells')
-    parser.add_argument('--tile-width', type=int, help='Width of each tile, in cells')
-    parser.add_argument('--tile-height', type=int, help='Height of each tile, in cells')
-    parser.add_argument('--max-tile-size-mm', type=float,
+    parser.add_argument('--tile-width', metavar='CELLS',type=int,
+                        help='Width of each tile, in cells')
+    parser.add_argument('--tile-height', metavar='CELLS',
+                        type=int, help='Height of each tile, in cells')
+    parser.add_argument('--max-tile-size-mm', type=float, metavar='MM',
                         help='Maximum size of a tile side in mm; default {}'.format(CELL_SIZE_MM * MAX_DEFAULT_TILE_SIZE))
-    parser.add_argument('--max-tile-size', type=int,
+    parser.add_argument('--max-tile-size', type=int, metavar='CELLS',
                         help='Maximum size of a tile side in cells; default {}'.format(MAX_DEFAULT_TILE_SIZE))
     args = parser.parse_args()
 
@@ -102,11 +117,11 @@ def determine_tile_size(args):
         args.tile_height = args.height
         return
 
-    min_x_tiles = math.ceil(args.width / MAX_DEFAULT_TILE_SIZE)
+    min_x_tiles = math.ceil(args.width / args.max_tile_size)
     min_x_size = math.ceil(args.width / min_x_tiles)
     args.tile_width = min_x_size
 
-    min_y_tiles = math.ceil(args.height / MAX_DEFAULT_TILE_SIZE)
+    min_y_tiles = math.ceil(args.height / args.max_tile_size)
     min_y_size = math.ceil(args.height / min_y_tiles)
     args.tile_height = min_y_size
 
