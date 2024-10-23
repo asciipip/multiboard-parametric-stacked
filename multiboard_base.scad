@@ -9,10 +9,8 @@ y_cells = 4;
 
 // Number of core tiles (teeth on the right and top)
 core_tiles = 4;
-
 // Number of side tiles (teeth only on the right)
 side_tiles = 4;
-
 // Number of corner tiles (no teeth)
 corner_tiles = 1;
 
@@ -21,8 +19,32 @@ corner_tiles = 1;
 // Your slicer's layer thickness in millimeters; 0.2 mm is strongly recommended
 layer_thickness = 0.2;
 
+/* [Per-Shape Tuning] */
+
+// X size of the side tiles; "0" means to use the main x_cells setting
+side_x_cells = 0;
+// Y size of the side tiles; "0" means to use the main y_cells setting
+side_y_cells = 0;
+// X size of the corner tiles; "0" means to use the main x_cells setting
+corner_x_cells = 0;
+// Y size of the corner tiles; "0" means to use the main y_cells setting
+corner_y_cells = 0;
 
 // No user-servicable parts below this line.
+
+// Actual tile dimensions
+real_side_x_cells = side_x_cells > 0 ? side_x_cells : x_cells;
+real_side_y_cells = side_y_cells > 0 ? side_y_cells : y_cells;
+real_corner_x_cells = corner_x_cells > 0 ? corner_x_cells : x_cells;
+real_corner_y_cells = corner_y_cells > 0 ? corner_y_cells : y_cells;
+
+// Dimension validation
+assert(min(x_cells, y_cells, real_side_x_cells, real_side_y_cells, real_corner_x_cells, real_corner_y_cells) >= 2,
+       "Minimum tile size is 2×2")
+assert(real_side_x_cells <= x_cells, "Side tile X value larger than core tile X value");
+assert(real_side_y_cells <= y_cells, "Side tile Y value larger than core tile Y value");
+assert(real_corner_x_cells <= real_side_x_cells, "Corner tile X value larger than side tile X value");
+assert(real_corner_y_cells <= real_side_y_cells, "Corner tile Y value larger than side tile Y value");
 
 // Main dimensions
 cell_size = 25+0;
@@ -368,8 +390,8 @@ for (level = [0:1:core_tiles-1])
 
 for (level = [core_tiles:1:core_tiles+side_tiles-1])
   translate([0, 0, stack_height * level])
-    multiboard_side(x_cells, y_cells);
+    multiboard_side(real_side_x_cells, real_side_y_cells);
 
 for (level = [core_tiles+side_tiles:1:core_tiles+side_tiles+corner_tiles-1])
   translate([0, 0, stack_height * level])
-    multiboard_corner(x_cells, y_cells);
+    multiboard_corner(real_corner_x_cells, real_corner_y_cells);

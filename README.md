@@ -24,6 +24,18 @@ Set the following parameters:
  * `layer_thickness` – The layer thickness you will be using to print the
    tiles
 
+If you want the side and corner tiles to have different dimensions from
+the corner tiles, you can also change the advanced settings, which should
+be fairly self-explanatory:
+
+ * `side_x_cells`
+ * `side_y_cells`
+ * `corner_x_cells`
+ * `corner_y_cells`
+
+The default value for those advanced settings is "0", which means to use
+the `x_cells` and `y_cells` values for the tile.
+
 Render the file and save to an STL.
 
 In your slicer, make sure you've enabled ironing of top surfaces.  In
