@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
 
-# TODO: Add the following to the program help text
-#
-# Give the program a space and it will figure out the optimal number of
-# tiles to fit into that space.  You can optionally give the maximum size
-# of your printer's printable area to tune the results to what your
-# printer can handle.
-
-
 import argparse
 import math
 import sys
