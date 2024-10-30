@@ -195,6 +195,8 @@ def determine_stacks(args):
 
 
 def confirm_stacks(stacks, args):
+    errors = []
+
     print('{} stack{} will be printed:'.format(
         len(stacks),
         '' if len(stacks) == 1 else 's'))
@@ -208,10 +210,21 @@ def confirm_stacks(stacks, args):
                 tile_group.width,
                 tile_group.height,
                 '' if tile_group.count == 1 else 's'))
+            if tile_group.width < 2 or tile_group.height < 2:
+                errors.append('ERROR: Tiles must be at least 2×2, but {} tile is only {}×{}!'.format(
+                    tile_shape_text(tile_group.shape), tile_group.width, tile_group.height))
+
+    if len(errors) > 0:
+        print();
+        for error in errors:
+            print(error)
 
     if args.dry_run:
         print()
         exit(0)
+
+    if len(errors) > 0:
+        exit(1)
 
     if not args.yes:
         print()
