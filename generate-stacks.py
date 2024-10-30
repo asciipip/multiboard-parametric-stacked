@@ -13,7 +13,10 @@ import sys
 CELL_SIZE_MM = 25
 TOOTH_EXTRA_MM = 8
 MAX_DEFAULT_TILE_SIZE = 8
-STACK_SCAD_FILE = 'arbitrary_stack.scad'
+STACK_SCAD_FILE = pathlib.Path(__file__)\
+                         .resolve()\
+                         .parent\
+                         .joinpath('arbitrary_stack.scad')
 
 
 TileGroup = collections.namedtuple('TileGroup', ['count', 'width', 'height', 'shape'])
