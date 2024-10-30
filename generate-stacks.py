@@ -1,23 +1,35 @@
 #!/usr/bin/env python3
 
 import argparse
+import collections
+import json
 import math
+import pathlib
+import shutil
+import subprocess
 import sys
 
 
 CELL_SIZE_MM = 25
 TOOTH_EXTRA_MM = 8
 MAX_DEFAULT_TILE_SIZE = 8
+STACK_SCAD_FILE = 'arbitrary_stack.scad'
+
+
+TileGroup = collections.namedtuple('TileGroup', ['count', 'width', 'height', 'shape'])
 
 
 def main():
     args = parse_args()
     show_dimensions(args)
+    stacks = determine_stacks(args)
+    confirm_stacks(stacks, args)
+    generate_stacks(stacks, args)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Determines a reasonable set of Multiboard tiles to cover a given 2D space.",
+        description="Generates models for a reasonable set of Multiboard tiles to cover a given 2D space.",
         epilog="""
 You must give the dimensions of the space to fill, either in millimeters
 (-w/--width-mm, -h/--height-mm) or in Multiboard cell counts
@@ -47,11 +59,19 @@ tiles; side and corner tiles might be truncated to fit in the space.""",
                         help='Maximum size of a tile side in mm; default {}'.format(CELL_SIZE_MM * MAX_DEFAULT_TILE_SIZE))
     parser.add_argument('--max-tile-size', type=int, metavar='CELLS',
                         help='Maximum size of a tile side in cells; default {}'.format(MAX_DEFAULT_TILE_SIZE))
+    parser.add_argument('-y', '--yes', action='store_true',
+                        help='Don\'t prompt before generating STLs')
+    parser.add_argument('-n', '--dry-run', action='store_true',
+                        help='Display board parameters but don\'t generate STLs')
     args = parser.parse_args()
 
     if args.help:
         parser.print_help()
         exit(0)
+
+    if args.yes and args.dry_run:
+        print('--yes and --dry-run are incompatible.', file=sys.stderr)
+        exit(1)
 
     if (args.width_mm is not None and args.width is not None) \
        or (args.height_mm is not None and args.height is not None):
@@ -129,23 +149,102 @@ def show_dimensions(args):
     print('  Base tile size: {}×{}'.format(args.tile_width, args.tile_height))
     print('  Board tile dimensions: {}×{}'.format(*board_tile_dimensions(args)))
     print()
-    print('Tiles to be printed:')
-    print()
-    print('  Core:       {:3d}  {}×{}'.format(
-        core_tile_count(args), args.tile_width, args.tile_height))
+
+
+def determine_stacks(args):
+    result = [[]]
+    if core_tile_count(args) > 0:
+        result[0].append(TileGroup(
+            count=core_tile_count(args),
+            width=args.tile_width,
+            height=args.tile_height,
+            shape='core'))
     if args.tile_width == args.tile_height \
        and top_tile_height(args) == right_tile_width(args):
-        print('  Side:       {0:3d}  {1}×{2}'.format(
-            right_tile_count(args) + top_tile_count(args),
-            args.tile_width, top_tile_height(args)))
+        if right_tile_count(args) + top_tile_count(args) > 0:
+            result[0].append(TileGroup(
+                count=right_tile_count(args) + top_tile_count(args),
+                width=args.tile_width,
+                height=top_tile_height(args),
+                shape='side'))
     else:
-        print('  Right side: {0:3d}  {1}×{2}  (Print as {2}×{1} side tile)'.format(
-            right_tile_count(args), right_tile_width(args), args.tile_height))
-        print('  Top side:   {:3d}  {}×{}'.format(
-            top_tile_count(args), args.tile_width, top_tile_height(args)))
-    print('  Corner:       1  {}×{}'.format(right_tile_width(args), top_tile_height(args)))
-        
+        if top_tile_count(args) > 0:
+            result[0].append(TileGroup(
+                count=top_tile_count(args),
+                width=args.tile_width,
+                height=top_tile_height(args),
+                shape='side'))
+        if right_tile_count(args) > 0:
+            if top_tile_count(args) == 0:
+                # Without the other side piece, this side can go on the main stack
+                right_stack = result[0]
+            else:
+                right_stack = []
+                result.append(right_stack)
+            right_stack.append(TileGroup(
+                count=right_tile_count(args),
+                width=right_tile_width(args),
+                height=args.tile_height,
+                shape='rotated side'))
+    result[0].append(TileGroup(
+        count=1,
+        width=right_tile_width(args),
+        height=top_tile_height(args),
+        shape='corner'))
+    return result
+
+
+def confirm_stacks(stacks, args):
+    print('{} stack{} will be printed:'.format(
+        len(stacks),
+        '' if len(stacks) == 1 else 's'))
+    for i, stack in enumerate(stacks):
+        print()
+        print('  Stack {} [{}]:'.format(i + 1, stack_name(stack)))
+        for tile_group in stack:
+            print('    {} {} {}×{} tile{}'.format(
+                tile_group.count,
+                tile_shape_text(tile_group.shape),
+                tile_group.width,
+                tile_group.height,
+                '' if tile_group.count == 1 else 's'))
+
+    if args.dry_run:
+        print()
+        exit(0)
+
+    if not args.yes:
+        print()
+        answer = input('Okay to proceed? [Y/n] ')
+        if answer != '' and answer.lower() != 'y' and answer.lower() != 'yes':
+            exit(1)
+
+
+def generate_stacks(stacks, args):
     print()
+
+    if shutil.which('openscad') is None:
+        print('Cannot find openscad in PATH; exiting.', file=sys.stderr)
+        print('STLs were NOT generated.', file=sys.stderr)
+        exit(1)
+
+    for stack in stacks:
+        stack_path = pathlib.Path(stack_name(stack))
+        if stack_path.exists() and not args.yes:
+            yn = input('{} exists; overwrite? [y/N] '.format(stack_path))
+            if yn.lower() != 'y' and yn.lower() != 'yes':
+                print('Skipping...')
+                print()
+                continue
+        print('Generating {}; this will take a while...'.format(stack_path))
+        cmd = [
+            'openscad',
+            '-o', stack_path,
+            '-D', 'tiles=' + json.dumps(stack),
+            STACK_SCAD_FILE,
+        ]
+        subprocess.run(cmd, check=True)
+        print()
 
 
 def board_tile_dimensions(args):
@@ -182,6 +281,39 @@ def right_tile_width(args):
         return args.tile_width
     else:
         return args.width % args.tile_width
+
+
+def stack_name(stack):
+    result = 'Stack'
+    for group in stack:
+        if group.shape == 'side':
+            shape_name = 'top'
+        elif group.shape == 'rotated side':
+            shape_name = 'right'
+        else:
+            shape_name = group.shape
+        if group.count == 1:
+            result += '-{}x{}_{}'.format(
+                group.width,
+                group.height,
+                shape_name)
+        else:
+            result += '-{}x{}x{}_{}'.format(
+                group.count,
+                group.width,
+                group.height,
+                shape_name)
+    result += '.stl'
+    return result
+
+
+def tile_shape_text(shape):
+    return {
+        'core': 'Core',
+        'side': 'Top Side',
+        'rotated side': 'Right Side',
+        'corner': 'Corner'
+    }[shape]
 
 
 if __name__ == '__main__':

@@ -104,15 +104,19 @@ for more information.
 
 ## Tile Generating Program
 
-There's a small program in the repository to help plan the tiles needed to
-cover a given area.  Run `generate-stacks.py --help` for usage
+There's a small program in the repository to generate STLs for the tiles
+needed to cover a given area.  Run `generate-stacks.py --help` for usage
 information.
+
+You need to have `openscad` in your path for the STL generation to work.
+You can also pass the `-n` or `--dry-run` parameter to just display the
+tiles that could be used to cover the area.
 
 For example, if you had an area 431 mm by 717 mm, you could run:
 
     generate-stacks.py -w 431 -h 717
 
-Which would generate the following output:
+Which would print the following before generating the tile stacks described:
 
     The parameters for the board are:
     
@@ -121,33 +125,15 @@ Which would generate the following output:
       Base tile size: 6×7
       Board tile dimensions: 3×4
     
-    Tiles to be printed:
+    2 stacks will be printed:
     
-      Core:         6  6×7
-      Right side:   3  5×7  (Print as 7×5 side tile)
-      Top side:     2  6×7
-      Corner:       1  5×7
-
-If your printer has a 300×300 mm print bed (and you wanted to leave a
-10 mm margin around the outside), you could run:
-
-    generate-stacks.py -w 431 -h 717 --max-tile-size-mm 280
-
-To get:
-
-    The parameters for the board are:
+      Stack 1 [Stack-6x6x7_core-2x6x7_top-5x7_corner.stl]:
+        6 Core 6×7 tiles
+        2 Top Side 6×7 tiles
+        1 Corner 5×7 tile
     
-      Area dimensions: 431.00×717.00 mm
-      Board dimensions: 17×28 (425×700 mm)
-      Base tile size: 9×10
-      Board tile dimensions: 2×3
-    
-    Tiles to be printed:
-    
-      Core:         2  9×10
-      Right side:   2  8×10  (Print as 10×8 side tile)
-      Top side:     1  9×8
-      Corner:       1  8×8
+      Stack 2 [Stack-3x5x7_right.stl]:
+        3 Right Side 5×7 tiles
 
 
 ## Credits
