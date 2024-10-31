@@ -53,10 +53,10 @@ module tile_group(offset, tile_params) {
 
 
 module generic_tile(x_cells, y_cells, shape) {
-       if (shape == "core")         {multiboard_tile(x_cells, y_cells, right_teeth=true, top_teeth=true);}
-  else if (shape == "side")         {multiboard_tile(x_cells, y_cells, right_teeth=true, top_teeth=false);}
-  else if (shape == "rotated side") {multiboard_tile(x_cells, y_cells, right_teeth=false, top_teeth=true);}
-  else if (shape == "corner")       {multiboard_tile(x_cells, y_cells, right_teeth=false, top_teeth=false);}
+       if (shape == "core")         {multiboard_tile(x_cells, y_cells, right_peg_holes=true, top_peg_holes=true);}
+  else if (shape == "side")         {multiboard_tile(x_cells, y_cells, right_peg_holes=true, top_peg_holes=false);}
+  else if (shape == "rotated side") {multiboard_tile(x_cells, y_cells, right_peg_holes=false, top_peg_holes=true);}
+  else if (shape == "corner")       {multiboard_tile(x_cells, y_cells, right_peg_holes=false, top_peg_holes=false);}
   else {
     assert(false, "Unknown tile shape");
   }

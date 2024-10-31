@@ -10,11 +10,11 @@ y_cells = 4;
 
 /* [Tile Counts] */
 
-// Number of core tiles (teeth on the right and top)
+// Number of core tiles (pegboard holes on the right and top)
 core_tiles = 4;
-// Number of side tiles (teeth only on the right)
+// Number of side tiles (pegboard holes only on the right)
 side_tiles = 4;
-// Number of corner tiles (no teeth)
+// Number of corner tiles (no pegboard holes)
 corner_tiles = 1;
 
 /* [Print Settings] */
@@ -103,89 +103,76 @@ stack_height = height + layer_separation;
 
 for (level = [0:1:core_tiles-1])
   translate([0, 0, stack_height * level])
-    multiboard_tile(x_cells, y_cells, right_teeth=true, top_teeth=true);
+    multiboard_tile(x_cells, y_cells, right_peg_holes=true, top_peg_holes=true);
 
 for (level = [core_tiles:1:core_tiles+side_tiles-1])
   translate([0, 0, stack_height * level])
-    multiboard_tile(x_cells, y_cells, right_teeth=true, top_teeth=false);
+    multiboard_tile(x_cells, y_cells, right_peg_holes=true, top_peg_holes=false);
 
 for (level = [core_tiles+side_tiles:1:core_tiles+side_tiles+corner_tiles-1])
   translate([0, 0, stack_height * level])
-    multiboard_tile(x_cells, y_cells, right_teeth=false, top_teeth=false);
+    multiboard_tile(x_cells, y_cells, right_peg_holes=false, top_peg_holes=false);
 
 
 // Now, all the modules the stack uses
 
-module multiboard_tile(x_cells, y_cells, right_teeth, top_teeth) {
+module multiboard_tile(x_cells, y_cells, right_peg_holes, top_peg_holes) {
   for (i=[0:x_cells-1])
     for (j=[0:y_cells-1])
-      translate([i*cell_size, j*cell_size, 0])
-        if ((i == x_cells-1 && !right_teeth) || (j == y_cells-1 && !top_teeth))
-          multiboard_corner_cell();
-        else
-          multiboard_core_cell();
+      let (in_right_column = i == x_cells-1,
+           in_top_row = j == y_cells-1,
+           with_peg_hole =
+             (!in_right_column && !in_top_row) ||
+             ( in_right_column && !in_top_row && right_peg_holes) ||
+             (!in_right_column &&  in_top_row && top_peg_holes) ||
+             ( in_right_column &&  in_top_row && right_peg_holes && top_peg_holes))
+        translate([i*cell_size, j*cell_size, 0])
+          multiboard_cell(with_peg_hole=with_peg_hole);
 }
 
 
-module multiboard_corner_cell() {
+module multiboard_cell(with_peg_hole) {
   difference() {
-    multiboard_corner_cell_base();
+    multiboard_cell_base(with_peg_hole);
     translate([cell_size/2, cell_size/2, 0])
-      multiboard_large_hole();
+      multihole();
+    if (with_peg_hole)
+      translate([cell_size, cell_size, 0])
+        peg_hole();
   }
 }
 
 
-module multiboard_corner_cell_base() {
+module multiboard_cell_base(with_peg_hole) {
+  base_points = [
+    [cell_size - size_l_offset, cell_size],
+    [size_l_offset,             cell_size],
+    [0,                         cell_size - size_l_offset],
+    [0,                         size_l_offset],
+    [size_l_offset,             0],
+    [cell_size - size_l_offset, 0],
+    [cell_size,                 size_l_offset],
+    [cell_size,                 cell_size - size_l_offset],
+  ];
+  points = with_peg_hole
+    ? [
+       each base_points,
+       [cell_size + size_l_offset, cell_size],
+       [cell_size,                 cell_size + size_l_offset],
+      ]
+    : base_points;
   linear_extrude(height)
-    polygon([
-      [size_l_offset,             0],
-      [cell_size - size_l_offset, 0],
-      [cell_size,                 size_l_offset],
-      [cell_size,                 cell_size - size_l_offset],
-      [cell_size - size_l_offset, cell_size],
-      [size_l_offset,             cell_size],
-      [0,                         cell_size - size_l_offset],
-      [0,                         size_l_offset],
-    ]);
+    polygon(points);
 }
 
 
-module multiboard_core_cell() {
-  difference() {
-    multiboard_core_cell_base();
-    translate([cell_size/2, cell_size/2, 0])
-      multiboard_large_hole();
-    translate([cell_size, cell_size, 0])
-      multiboard_small_hole();
-  }
+module multihole() {
+  multihole_base();
+  multihole_threads();
 }
 
 
-module multiboard_core_cell_base() {
-  linear_extrude(height)
-    polygon([
-      [size_l_offset,             0],
-      [cell_size - size_l_offset, 0],
-      [cell_size,                 size_l_offset],
-      [cell_size,                 cell_size - size_l_offset],
-      [cell_size + size_l_offset, cell_size],
-      [cell_size,                 cell_size + size_l_offset],
-      [cell_size - size_l_offset, cell_size],
-      [size_l_offset,             cell_size],
-      [0,                         cell_size - size_l_offset],
-      [0,                         size_l_offset],
-    ]);
-}
-
-
-module multiboard_large_hole() {
-  multiboard_large_hole_base();
-  multiboard_large_hole_threads();
-}
-
-
-module multiboard_large_hole_base() {
+module multihole_base() {
   outer_offset = hole_thin_bound_circle_d / 2;
   inner_offset = hole_thick_bound_circle_d / 2;
 
@@ -204,7 +191,7 @@ module multiboard_large_hole_base() {
 }
 
 
-module multiboard_large_hole_threads() {
+module multihole_threads() {
   translate([0, 0, -large_thread_h2/2])
     trapz_thread(large_thread_d1, large_thread_d2,
                  large_thread_h1, large_thread_h2,
@@ -214,13 +201,13 @@ module multiboard_large_hole_threads() {
 }
 
 
-module multiboard_small_hole() {
-  multiboard_small_hole_base();
-  multiboard_small_hole_threads();
+module peg_hole() {
+  peg_hole_base();
+  peg_hole_threads();
 }
 
 
-module multiboard_small_hole_base() {
+module peg_hole_base() {
   translate([0, 0, -layer_separation])
     cylinder(
       d=hole_sm_d,
@@ -229,7 +216,7 @@ module multiboard_small_hole_base() {
 }
 
 
-module multiboard_small_hole_threads() {
+module peg_hole_threads() {
   intersection() {
     translate([0, 0, stack_height/2])
       cube([cell_size, cell_size, stack_height], center=true);
