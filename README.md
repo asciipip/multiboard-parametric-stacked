@@ -143,8 +143,7 @@ Which would print the following before generating the tile stacks described:
   [Keep Making]: https://www.youtube.com/@Keep-Making
 
 These files are based on Victor Zag's [multiboard-parametric][] project.
-Victor really did all the hard work; this project's contributions are
-fairly minimal in comparison.
+Victor did all the really important initial work.
 
   [multiboard-parametric]: https://github.com/shaggyone/multiboard-parametric
 

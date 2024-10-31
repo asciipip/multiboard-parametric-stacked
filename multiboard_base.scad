@@ -33,6 +33,7 @@ corner_x_cells = 0;
 // Y size of the corner tiles; "0" means to use the main y_cells setting
 corner_y_cells = 0;
 
+
 // No user-servicable parts below this line.
 
 // Actual tile dimensions
@@ -42,12 +43,15 @@ real_corner_x_cells = corner_x_cells > 0 ? corner_x_cells : x_cells;
 real_corner_y_cells = corner_y_cells > 0 ? corner_y_cells : y_cells;
 
 // Dimension validation
-assert(min(x_cells, y_cells, real_side_x_cells, real_side_y_cells, real_corner_x_cells, real_corner_y_cells) >= 2,
-       "Minimum tile size is 2×2")
+assert(layer_thickness > 0, "Layer thickness must be larger than zero");
+assert(min(core_tiles, side_tiles, corner_tiles) >= 0, "Can't make negative numbers of tiles");
+assert(min(x_cells, y_cells, real_side_x_cells, real_side_y_cells, real_corner_x_cells, real_corner_y_cells) >= 1,
+       "Not enough cells to actually make a tile")
 assert(real_side_x_cells <= x_cells, "Side tile X value larger than core tile X value");
 assert(real_side_y_cells <= y_cells, "Side tile Y value larger than core tile Y value");
 assert(real_corner_x_cells <= real_side_x_cells, "Corner tile X value larger than side tile X value");
 assert(real_corner_y_cells <= real_side_y_cells, "Corner tile Y value larger than side tile Y value");
+
 
 // Main dimensions
 cell_size = 25+0;
@@ -91,310 +95,207 @@ small_thread_h2 = small_thread_pitch-0.5;
 small_thread_fn=32+0;
 
 // Distance between stacked layers
-stack_height = height + abs(-height % layer_thickness) + layer_thickness;
+layer_separation = abs(-height % layer_thickness) + layer_thickness;
+stack_height = height + layer_separation;
 
 
-module multiboard_core_base(x_cells, y_cells) {
-    board_width  = cell_size * x_cells;
-    board_height = cell_size * y_cells;
+// Here's the stack
 
-    b_points = [for(i=[0: x_cells-1])
-        each [
-            [i*cell_size + size_l_offset,             0],
-            [i*cell_size + cell_size - size_l_offset, 0],
-            [i*cell_size + cell_size,                 0 + size_l_offset],
-        ]
-    ];
+for (level = [0:1:core_tiles-1])
+  translate([0, 0, stack_height * level])
+    multiboard_tile(x_cells, y_cells, right_teeth=true, top_teeth=true);
 
-    r_points = [for(j=[0: y_cells-1])
-        each [
-            [board_width,               j*cell_size + size_l_offset],
-            [board_width,               j*cell_size + cell_size - size_l_offset],
-            [board_width+size_l_offset, j*cell_size + cell_size],
-        ]
-    ];
+for (level = [core_tiles:1:core_tiles+side_tiles-1])
+  translate([0, 0, stack_height * level])
+    multiboard_tile(x_cells, y_cells, right_teeth=true, top_teeth=false);
 
-    t_points =  [for(i=[x_cells-1:-1:0])
-        each [
-            [i*cell_size + cell_size,                 board_height + size_l_offset],
-            [i*cell_size + cell_size - size_l_offset, board_height],
-            [i*cell_size + size_l_offset,             board_height],
-        ]
-    ];
+for (level = [core_tiles+side_tiles:1:core_tiles+side_tiles+corner_tiles-1])
+  translate([0, 0, stack_height * level])
+    multiboard_tile(x_cells, y_cells, right_teeth=false, top_teeth=false);
 
-    l_points = [for(j=[y_cells-1:-1:0])
-        each [
-            [0 + size_l_offset, j*cell_size + cell_size],
-            [0,                 j*cell_size + cell_size - size_l_offset],
-            [0,                 j*cell_size + size_l_offset],
-        ]
-    ];
 
-    linear_extrude(height) {
-        polygon([
-            each b_points,
-            each r_points,
-            each t_points,
-            each l_points,
-        ]);
-    }
-}
+// Now, all the modules the stack uses
 
-module multiboard_side_base(x_cells, y_cells) {
-    board_width  = cell_size * x_cells;
-    board_height = cell_size * y_cells;
-
-    b_points = [for(i=[0: x_cells-1])
-        each [
-            [i*cell_size + size_l_offset,             0],
-            [i*cell_size + cell_size - size_l_offset, 0],
-            [i*cell_size + cell_size,                 0 + size_l_offset],
-        ]
-    ];
-
-    r_points = [for(j=[0: y_cells-1])
-        each [
-            [board_width,               j*cell_size + size_l_offset],
-            [board_width,               j*cell_size + cell_size - size_l_offset],
-            [board_width+size_l_offset, j*cell_size + cell_size],
-        ]
-    ];
-
-    t_points =  [for(i=[x_cells-1:-1:0])
-        each [
-            [i*cell_size + cell_size,                 board_height - size_l_offset],
-            [i*cell_size + cell_size - size_l_offset, board_height],
-            [i*cell_size + size_l_offset,             board_height],
-        ]
-    ];
-
-    l_points = [for(j=[y_cells-1:-1:0])
-        each [
-            [0 + size_l_offset, j*cell_size + cell_size],
-            [0,                 j*cell_size + cell_size - size_l_offset],
-            [0,                 j*cell_size + size_l_offset],
-        ]
-    ];
-
-    linear_extrude(height) {
-        polygon([
-            each b_points,
-            each r_points,
-            each t_points,
-            each l_points,
-        ]);
-    }
-}
-
-module multiboard_corner_base(x_cells, y_cells) {
-    board_width  = cell_size * x_cells;
-    board_height = cell_size * y_cells;
-
-    b_points = [for(i=[0: x_cells-1])
-        each [
-            [i*cell_size + size_l_offset,             0],
-            [i*cell_size + cell_size - size_l_offset, 0],
-            [i*cell_size + cell_size,                 0 + size_l_offset],
-        ]
-    ];
-
-    r_points = [for(j=[0: y_cells-1])
-        each [
-            [board_width,               j*cell_size + size_l_offset],
-            [board_width,               j*cell_size + cell_size - size_l_offset],
-            [board_width-size_l_offset, j*cell_size + cell_size],
-        ]
-    ];
-
-    t_points =  [for(i=[x_cells-1:-1:0])
-        each [
-            [i*cell_size + cell_size,                 board_height - size_l_offset],
-            [i*cell_size + cell_size - size_l_offset, board_height],
-            [i*cell_size + size_l_offset,             board_height],
-        ]
-    ];
-
-    l_points = [for(j=[y_cells-1:-1:0])
-        each [
-            [0 + size_l_offset, j*cell_size + cell_size],
-            [0,                 j*cell_size + cell_size - size_l_offset],
-            [0,                 j*cell_size + size_l_offset],
-        ]
-    ];
-
-    linear_extrude(height) {
-        polygon([
-            each b_points,
-            each r_points,
-            each t_points,
-            each l_points,
-        ]);
-    }
+module multiboard_tile(x_cells, y_cells, right_teeth, top_teeth) {
+  for (i=[0:x_cells-1])
+    for (j=[0:y_cells-1])
+      translate([i*cell_size, j*cell_size, 0])
+        if ((i == x_cells-1 && !right_teeth) || (j == y_cells-1 && !top_teeth))
+          multiboard_corner_cell();
+        else
+          multiboard_core_cell();
 }
 
 
-
-module multiboard_core(x_cells, y_cells) {
+module multiboard_corner_cell() {
   difference() {
-    multiboard_core_base(x_cells, y_cells);
-
-    for(i=[0: x_cells-1]) {
-      for(j=[0: y_cells-1]) {
-        translate([cell_size/2+i*cell_size, cell_size/2+j*cell_size])
-          multiboard_tile_hole();
-      }
-    }
-    for(i=[0: x_cells-1]) {
-      for(j=[0: y_cells-1]) {
-          translate([cell_size+i*cell_size, cell_size+j*cell_size])
-            multiboard_tile_hole_small();
-      }
-    }
-  }
-}
-
-module multiboard_side(x_cells, y_cells) {
-  difference() {
-    multiboard_side_base(x_cells, y_cells);
-
-    for(i=[0: x_cells-1]) {
-      for(j=[0: y_cells-1]) {
-        translate([cell_size/2+i*cell_size, cell_size/2+j*cell_size])
-          multiboard_tile_hole();
-      }
-    }
-    for(i=[0: x_cells-1]) {
-      for(j=[0: y_cells-2]) {
-          translate([cell_size+i*cell_size, cell_size+j*cell_size])
-            multiboard_tile_hole_small();
-      }
-    }
-  }
-}
-
-module multiboard_corner(x_cells, y_cells) {
-  difference() {
-    multiboard_corner_base(x_cells, y_cells);
-
-    for(i=[0: x_cells-1]) {
-      for(j=[0: y_cells-1]) {
-        translate([cell_size/2+i*cell_size, cell_size/2+j*cell_size])
-          multiboard_tile_hole();
-      }
-    }
-    for(i=[0: x_cells-2]) {
-      for(j=[0: y_cells-2]) {
-          translate([cell_size+i*cell_size, cell_size+j*cell_size])
-            multiboard_tile_hole_small();
-      }
-    }
+    multiboard_corner_cell_base();
+    translate([cell_size/2, cell_size/2, 0])
+      multiboard_large_hole();
   }
 }
 
 
-
-module multiboard_tile_hole_base() {
-    rotate(22.5, [0, 0, 1]) {
-        translate([0, 0, (height - hole_thick_height)/2])
-            cylinder(d=hole_thick_bound_circle_d, h=hole_thick_height, $fn=8);
-        cylinder(d1=hole_thin_bound_circle_d, d2=hole_thick_bound_circle_d,
-            h=(height - hole_thick_height)/2, $fn=8);
-        translate([0, 0, height-(height - hole_thick_height)/2])
-            cylinder(d1=hole_thick_bound_circle_d, d2=hole_thin_bound_circle_d,
-                h=(height - hole_thick_height)/2, $fn=8);
-    }
+module multiboard_corner_cell_base() {
+  linear_extrude(height)
+    polygon([
+      [size_l_offset,             0],
+      [cell_size - size_l_offset, 0],
+      [cell_size,                 size_l_offset],
+      [cell_size,                 cell_size - size_l_offset],
+      [cell_size - size_l_offset, cell_size],
+      [size_l_offset,             cell_size],
+      [0,                         cell_size - size_l_offset],
+      [0,                         size_l_offset],
+    ]);
 }
 
 
-module multiboard_tile_hole() {
-    multiboard_tile_hole_base();
-    //color("#0000F0")
-    translate([0, 0, -large_thread_h2/2])
+module multiboard_core_cell() {
+  difference() {
+    multiboard_core_cell_base();
+    translate([cell_size/2, cell_size/2, 0])
+      multiboard_large_hole();
+    translate([cell_size, cell_size, 0])
+      multiboard_small_hole();
+  }
+}
+
+
+module multiboard_core_cell_base() {
+  linear_extrude(height)
+    polygon([
+      [size_l_offset,             0],
+      [cell_size - size_l_offset, 0],
+      [cell_size,                 size_l_offset],
+      [cell_size,                 cell_size - size_l_offset],
+      [cell_size + size_l_offset, cell_size],
+      [cell_size,                 cell_size + size_l_offset],
+      [cell_size - size_l_offset, cell_size],
+      [size_l_offset,             cell_size],
+      [0,                         cell_size - size_l_offset],
+      [0,                         size_l_offset],
+    ]);
+}
+
+
+module multiboard_large_hole() {
+  multiboard_large_hole_base();
+  multiboard_large_hole_threads();
+}
+
+
+module multiboard_large_hole_base() {
+  outer_offset = hole_thin_bound_circle_d / 2;
+  inner_offset = hole_thick_bound_circle_d / 2;
+
+  rotate(22.5, [0, 0, 1])
+    rotate_extrude($fn=8)
+    polygon([
+      [0,            -layer_separation],
+      [outer_offset, -layer_separation],
+      [outer_offset, 0],
+      [inner_offset, (height - hole_thick_height)/2],
+      [inner_offset, (height + hole_thick_height)/2],
+      [outer_offset, height],
+      [outer_offset, stack_height],
+      [0,            stack_height],
+    ]);
+}
+
+
+module multiboard_large_hole_threads() {
+  translate([0, 0, -large_thread_h2/2])
     trapz_thread(large_thread_d1, large_thread_d2,
-        large_thread_h1, large_thread_h2,
-        thread_len=height+large_thread_h2, pitch=large_thread_pitch, $fn=large_thread_fn);
+                 large_thread_h1, large_thread_h2,
+                 thread_len=height+large_thread_h2,
+                 pitch=large_thread_pitch,
+                 $fn=large_thread_fn);
 }
 
-module multiboard_tile_hole_small() {
-    cylinder(d=hole_sm_d, h=height,$fn=small_thread_fn);
-    //color("#0000F0")
+
+module multiboard_small_hole() {
+  multiboard_small_hole_base();
+  multiboard_small_hole_threads();
+}
+
+
+module multiboard_small_hole_base() {
+  translate([0, 0, -layer_separation])
+    cylinder(
+      d=hole_sm_d,
+      h=stack_height + layer_separation,
+      $fn=small_thread_fn);
+}
+
+
+module multiboard_small_hole_threads() {
+  intersection() {
+    translate([0, 0, stack_height/2])
+      cube([cell_size, cell_size, stack_height], center=true);
     translate([0, 0, -small_thread_h2/2])
-    trapz_thread(small_thread_d1, small_thread_d2,
-        small_thread_h1, small_thread_h2,
-        thread_len=height+small_thread_h2, pitch=small_thread_pitch, $fn=small_thread_fn);
+      trapz_thread(small_thread_d1, small_thread_d2,
+                   small_thread_h1, small_thread_h2,
+                   thread_len=height+small_thread_h2,
+                   pitch=small_thread_pitch,
+                   $fn=small_thread_fn);
+  }
 }
 
-function spiral_segment_points(profile_points, angle_offset, z_offset) =
-    [for (p=profile_points)
-        [
-            p[0] * cos(angle_offset),
-            p[0] * sin(angle_offset),
-            p[1] + z_offset,
-        ]
-    ];
+
+module trapz_thread(d1, d2, h1, h2, thread_len, pitch) {
+  thread_profile = [
+    [d1/2, -h1/2],
+    [d1/2, h1/2],
+    [d2/2, h2/2],
+    [d2/2, -h2/2],
+  ];
+  points = spiral_points(thread_profile, thread_len, pitch);
+  faces = [
+    [each [3:-1:0]],
+    each spiral_paths(4, thread_len, pitch),
+    [each [len(points)-4:len(points)-1]],
+  ];
+
+  polyhedron(points=points, faces=faces);
+}
+
 
 function spiral_points(profile_points, spiral_len, spiral_loop_pitch) =
+  [for (i=[0:round($fn*spiral_len/spiral_loop_pitch)])
+      each spiral_segment_points(
+          profile_points,
+          i * 360.0/$fn,
+          i * spiral_loop_pitch/$fn)
+  ];
 
-    [for (i=[0:round($fn*spiral_len/spiral_loop_pitch)])
-        each spiral_segment_points(
-            profile_points,
-            i * 360.0/$fn,
-            i * spiral_loop_pitch/$fn
-        )
-    ];
 
-function limit_point_number(point, profile_points_count) =
-    point >= profile_points_count ? point - profile_points_count : point;
+function spiral_segment_points(profile_points, angle_offset, z_offset) =
+  [for (p=profile_points)
+      [
+          p[0] * cos(angle_offset),
+          p[0] * sin(angle_offset),
+          p[1] + z_offset,
+      ]
+  ];
+
+
+function spiral_paths(profile_points_count, spiral_len, spiral_loop_pitch) =
+  [for (i=[0:round($fn*spiral_len/spiral_loop_pitch)-1])
+      each spiral_segment_paths(profile_points_count, i)
+  ];
+
 
 function spiral_segment_paths(profile_points_count, segment_number) =
-    [
-
-        each [for(point=[0:profile_points_count-1])
+  [each [for(point=[0:profile_points_count-1])
             [
                 segment_number*profile_points_count+limit_point_number(point+1, profile_points_count),
                 segment_number*profile_points_count+limit_point_number(point+1, profile_points_count)+profile_points_count,
                 segment_number*profile_points_count+limit_point_number(point, profile_points_count)+profile_points_count,
                 segment_number*profile_points_count+limit_point_number(point, profile_points_count)
             ]
-
-        ],
-    ];
-
-function spiral_paths(profile_points_count, spiral_len, spiral_loop_pitch) =
-    [for (i=[0:round($fn*spiral_len/spiral_loop_pitch)-1])
-
-        each spiral_segment_paths(profile_points_count, i)
-    ];
-
-module trapz_thread(d1, d2, h1, h2, thread_len, pitch) {
-    thread_profile = [
-        [d1/2, -h1/2],
-        [d1/2, h1/2],
-        [d2/2, h2/2],
-        [d2/2, -h2/2],
-    ];
-    points=spiral_points(thread_profile, thread_len, pitch);
-    faces=[
-        [each [3:-1:0]],
-        each spiral_paths(4, thread_len, pitch),
-        [each [len(points)-4:len(points)-1]],
-    ];
-
-    polyhedron(
-        points=points,
-        faces=faces
-    );
-}
+         ]];
 
 
-for (level = [0:1:core_tiles-1])
-  translate([0, 0, stack_height * level])
-    multiboard_core(x_cells, y_cells);
-
-for (level = [core_tiles:1:core_tiles+side_tiles-1])
-  translate([0, 0, stack_height * level])
-    multiboard_side(real_side_x_cells, real_side_y_cells);
-
-for (level = [core_tiles+side_tiles:1:core_tiles+side_tiles+corner_tiles-1])
-  translate([0, 0, stack_height * level])
-    multiboard_corner(real_corner_x_cells, real_corner_y_cells);
+function limit_point_number(point, profile_points_count) =
+  point >= profile_points_count ? point - profile_points_count : point;
