@@ -101,20 +101,24 @@ stack_height = height + layer_separation;
 
 // Here's the stack
 
-for (level = [0:1:core_tiles-1])
-  translate([0, 0, stack_height * level])
-    multiboard_tile(x_cells, y_cells, right_peg_holes=true, top_peg_holes=true);
+multiboard_tile_stack(core_tiles, x_cells, y_cells, right_peg_holes=true, top_peg_holes=true);
 
-for (level = [core_tiles:1:core_tiles+side_tiles-1])
-  translate([0, 0, stack_height * level])
-    multiboard_tile(x_cells, y_cells, right_peg_holes=true, top_peg_holes=false);
+translate([0, 0, stack_height * core_tiles])
+  multiboard_tile_stack(side_tiles, real_side_x_cells, real_side_y_cells, right_peg_holes=true, top_peg_holes=false);
 
-for (level = [core_tiles+side_tiles:1:core_tiles+side_tiles+corner_tiles-1])
-  translate([0, 0, stack_height * level])
-    multiboard_tile(x_cells, y_cells, right_peg_holes=false, top_peg_holes=false);
+translate([0, 0, stack_height * (core_tiles + side_tiles)])
+  multiboard_tile_stack(corner_tiles, real_corner_x_cells, real_corner_y_cells, right_peg_holes=false, top_peg_holes=false);
 
 
 // Now, all the modules the stack uses
+
+module multiboard_tile_stack(tile_count, x_cells, y_cells, right_peg_holes, top_peg_holes) {
+  if (tile_count > 0)
+    for (level = [0:tile_count-1])
+      translate([0, 0, stack_height * level])
+        multiboard_tile(x_cells, y_cells, right_peg_holes, top_peg_holes);
+}
+
 
 module multiboard_tile(x_cells, y_cells, right_peg_holes, top_peg_holes) {
   for (i=[0:x_cells-1])
