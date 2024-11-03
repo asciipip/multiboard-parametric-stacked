@@ -79,7 +79,7 @@ multihole_thick_side_l = multihole_thick_size/(1+2*cos(45));
 multihole_thick_bound_circle_d = multihole_thick_side_l/sin(22.5);
 multihole_thin_side_l = multihole_thin_size/(1+2*cos(45));
 multihole_thin_bound_circle_d = multihole_thin_side_l/sin(22.5);
-multihole_base_fn = 8;
+multihole_base_fn = 8+0;
 
 // The threads are formed using a spiral with a trapezoidal cross-section.
 // `d1` is the outer diameter of the spiral and `d2` is the inner
