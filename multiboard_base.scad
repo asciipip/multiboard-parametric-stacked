@@ -53,6 +53,9 @@ assert(real_corner_x_cells <= real_side_x_cells, "Corner tile X value larger tha
 assert(real_corner_y_cells <= real_side_y_cells, "Corner tile Y value larger than side tile Y value");
 
 
+// All measurements are based on the Multiboard tile component remixing
+// files at https://than.gs/m/994681, uploaded 2024-01-19.
+
 // Main dimensions
 cell_size = 25+0;
 height = 6.4+0;
@@ -62,15 +65,27 @@ side_l = cell_size/(1+2*cos(45));
 size_l_offset = (cell_size - side_l)/2;
 
 // Single tile hole dimensions
+
+// The "thick" part is the middle of the hole, where the sides are thicker
+// than the top and bottom.
 multihole_thick_height = 2.4+0;
 multihole_thick_size = 21.4+0;
+multihole_thin_size = 23.4+0;
+
+// The multihole is an octagon.  We'll get OpenSCAD to generate that by
+// telling it to make a circle with a radius equal to the outer corners of
+// the hole, but with only eight sides.
 multihole_thick_side_l = multihole_thick_size/(1+2*cos(45));
 multihole_thick_bound_circle_d = multihole_thick_side_l/sin(22.5);
-
-multihole_thin_size = 23.4+0;
 multihole_thin_side_l = multihole_thin_size/(1+2*cos(45));
 multihole_thin_bound_circle_d = multihole_thin_side_l/sin(22.5);
+multihole_base_fn = 8;
 
+// The threads are formed using a spiral with a trapezoidal cross-section.
+// `d1` is the outer diameter of the spiral and `d2` is the inner
+// diameter.  `h1` is the height of the outer wall and `h2` is the height
+// of the inner wall.  `pitch` has its usual meaning: the distance from
+// one thread peak (or valley) to the next immediately above or below it.
 multihole_thread_d1 = 22.5+0;
 multihole_thread_d2 = multihole_thick_size+0;
 multihole_thread_h1 = 0.5+0;  // Height of outer thread
@@ -175,8 +190,9 @@ module multihole_base() {
   outer_offset = multihole_thin_bound_circle_d / 2;
   inner_offset = multihole_thick_bound_circle_d / 2;
 
+  // Rotation needed to align the hole sides with the cell's outer sides.
   rotate(22.5, [0, 0, 1])
-    rotate_extrude($fn=8)
+    rotate_extrude($fn=multihole_base_fn)
     polygon([
       [0,            -layer_separation],
       [outer_offset, -layer_separation],
