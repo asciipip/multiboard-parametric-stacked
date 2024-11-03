@@ -57,42 +57,37 @@ assert(real_corner_y_cells <= real_side_y_cells, "Corner tile Y value larger tha
 cell_size = 25+0;
 height = 6.4+0;
 
-hole_thick = 3.6+0; // 3.280;
-hole_thick_height = 2.4+0;
-hole_thin = 1.6+0;
-
-hole_rg_spiral_d=0.776+0;
-
-hole_sm_d = 6.069+0.025; // 7.5;
-
 // Single tile outer dimensions
 side_l = cell_size/(1+2*cos(45));
-bound_circle_d = side_l/sin(22.5);
-
-size_l_offset = (cell_size - side_l)*0.5;
+size_l_offset = (cell_size - side_l)/2;
 
 // Single tile hole dimensions
-hole_thick_size = cell_size - hole_thick;
-hole_thick_side_l = (cell_size - hole_thick)/(1+2*cos(45));
-hole_thick_bound_circle_d = hole_thick_side_l/sin(22.5);
+multihole_thick_height = 2.4+0;
+multihole_thick_size = 21.4+0;
+multihole_thick_side_l = multihole_thick_size/(1+2*cos(45));
+multihole_thick_bound_circle_d = multihole_thick_side_l/sin(22.5);
 
-hole_thin_size = cell_size - hole_thin;
-hole_thin_side_l = hole_thin_size/(1+2*cos(45));
-hole_thin_bound_circle_d = hole_thin_side_l/sin(22.5);
+multihole_thin_size = 23.4+0;
+multihole_thin_side_l = multihole_thin_size/(1+2*cos(45));
+multihole_thin_bound_circle_d = multihole_thin_side_l/sin(22.5);
 
-large_thread_d1 = 22.5+0; // hole_thin_size - 0.6;
-large_thread_d2 = hole_thick_size+0;
-large_thread_h1 = 0.5+0;
-large_thread_h2 = 1.583+0;
-large_thread_fn=32+0;
-large_thread_pitch = 2.5+0;
+multihole_thread_d1 = 22.5+0;
+multihole_thread_d2 = multihole_thick_size+0;
+multihole_thread_h1 = 0.5+0;  // Height of outer thread
+multihole_thread_h2 = 1.583+0;  // Height of thread at inner cylinder
+multihole_thread_pitch = 2.5+0;
+multihole_thread_fn = 32+0;
 
-small_thread_pitch = 3+0;
-small_thread_d1 = 7.025+0;
-small_thread_d2 = 6.069+0;
-small_thread_h1 = 0.768+0;
-small_thread_h2 = small_thread_pitch-0.5;
-small_thread_fn=32+0;
+peg_hole_thick_height = 2.9+0;
+peg_hole_thick_size = 6+0;
+peg_hole_thin_size = 7.5+0;
+
+peg_hole_thread_pitch = 3+0;
+peg_hole_thread_d1 = 7+0;
+peg_hole_thread_d2 = peg_hole_thick_size+0;
+peg_hole_thread_h1 = 0.77+0;
+peg_hole_thread_h2 = peg_hole_thread_pitch-0.5;
+peg_hole_thread_fn = 32+0;
 
 // Distance between stacked layers
 layer_separation = abs(-height % layer_thickness) + layer_thickness;
@@ -177,8 +172,8 @@ module multihole() {
 
 
 module multihole_base() {
-  outer_offset = hole_thin_bound_circle_d / 2;
-  inner_offset = hole_thick_bound_circle_d / 2;
+  outer_offset = multihole_thin_bound_circle_d / 2;
+  inner_offset = multihole_thick_bound_circle_d / 2;
 
   rotate(22.5, [0, 0, 1])
     rotate_extrude($fn=8)
@@ -186,8 +181,8 @@ module multihole_base() {
       [0,            -layer_separation],
       [outer_offset, -layer_separation],
       [outer_offset, 0],
-      [inner_offset, (height - hole_thick_height)/2],
-      [inner_offset, (height + hole_thick_height)/2],
+      [inner_offset, (height - multihole_thick_height)/2],
+      [inner_offset, (height + multihole_thick_height)/2],
       [outer_offset, height],
       [outer_offset, stack_height],
       [0,            stack_height],
@@ -196,27 +191,41 @@ module multihole_base() {
 
 
 module multihole_threads() {
-  translate([0, 0, -large_thread_h2/2])
-    trapz_thread(large_thread_d1, large_thread_d2,
-                 large_thread_h1, large_thread_h2,
-                 thread_len=height+large_thread_h2,
-                 pitch=large_thread_pitch,
-                 $fn=large_thread_fn);
+  translate([0, 0, -multihole_thread_h2/2])
+    trapz_thread(multihole_thread_d1, multihole_thread_d2,
+                 multihole_thread_h1, multihole_thread_h2,
+                 thread_len=height+multihole_thread_h2,
+                 pitch=multihole_thread_pitch,
+                 $fn=multihole_thread_fn);
 }
 
 
 module peg_hole() {
-  peg_hole_base();
-  peg_hole_threads();
+  // The rotation here isn't strictly necessary, but it makes the threads
+  // line up with the Multiboard STEP files, which, in turn, makes
+  // debugging easier.
+  rotate(-129, [0, 0, 1]) {
+    peg_hole_base();
+    peg_hole_threads();
+  }
 }
 
 
 module peg_hole_base() {
-  translate([0, 0, -layer_separation])
-    cylinder(
-      d=hole_sm_d,
-      h=stack_height + layer_separation,
-      $fn=small_thread_fn);
+  outer_offset = peg_hole_thin_size / 2;
+  inner_offset = peg_hole_thick_size / 2;
+
+  rotate_extrude($fn=peg_hole_thread_fn)
+    polygon([
+      [0,            -layer_separation],
+      [outer_offset, -layer_separation],
+      [outer_offset, 0],
+      [inner_offset, (height - peg_hole_thick_height)/2],
+      [inner_offset, (height + peg_hole_thick_height)/2],
+      [outer_offset, height],
+      [outer_offset, stack_height],
+      [0,            stack_height],
+    ]);
 }
 
 
@@ -224,12 +233,12 @@ module peg_hole_threads() {
   intersection() {
     translate([0, 0, stack_height/2])
       cube([cell_size, cell_size, stack_height], center=true);
-    translate([0, 0, -small_thread_h2/2])
-      trapz_thread(small_thread_d1, small_thread_d2,
-                   small_thread_h1, small_thread_h2,
-                   thread_len=height+small_thread_h2,
-                   pitch=small_thread_pitch,
-                   $fn=small_thread_fn);
+    translate([0, 0, -peg_hole_thread_h2/2])
+      trapz_thread(peg_hole_thread_d1, peg_hole_thread_d2,
+                   peg_hole_thread_h1, peg_hole_thread_h2,
+                   thread_len=height+peg_hole_thread_h2,
+                   pitch=peg_hole_thread_pitch,
+                   $fn=peg_hole_thread_fn);
   }
 }
 
