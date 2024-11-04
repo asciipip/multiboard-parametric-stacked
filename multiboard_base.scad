@@ -86,7 +86,7 @@ multihole_base_fn = 8+0;
 // diameter.  `h1` is the height of the outer wall and `h2` is the height
 // of the inner wall.  `pitch` has its usual meaning: the distance from
 // one thread peak (or valley) to the next immediately above or below it.
-multihole_thread_d1 = 22.5+0;
+multihole_thread_d1 = 22.6+0;
 multihole_thread_d2 = multihole_thick_size+0;
 multihole_thread_h1 = 0.5+0;  // Height of outer thread
 multihole_thread_h2 = 1.583+0;  // Height of thread at inner cylinder
