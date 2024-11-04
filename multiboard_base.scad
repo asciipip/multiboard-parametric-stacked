@@ -182,7 +182,11 @@ module multiboard_cell_base(with_peg_hole) {
 
 module multihole() {
   multihole_base();
-  multihole_threads();
+  // The rotation here isn't strictly necessary, but it makes the threads
+  // line up with the Multiboard STEP files, which, in turn, makes
+  // debugging easier.
+  rotate(-170, [0, 0, 1])
+    multihole_threads();
 }
 
 
