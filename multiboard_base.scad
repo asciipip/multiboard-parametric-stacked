@@ -59,6 +59,7 @@ assert(real_corner_y_cells <= real_side_y_cells, "Corner tile Y value larger tha
 // Main dimensions
 cell_size = 25+0;
 height = 6.4+0;
+default_fn = 32+0;
 
 // Single tile outer dimensions
 side_l = cell_size/(1+2*cos(45));
@@ -91,7 +92,6 @@ multihole_thread_d2 = multihole_thick_size+0;
 multihole_thread_h1 = 0.5+0;  // Height of outer thread
 multihole_thread_h2 = 1.583+0;  // Height of thread at inner cylinder
 multihole_thread_pitch = 2.5+0;
-multihole_thread_fn = 32+0;
 
 peg_hole_thick_height = 2.9+0;
 peg_hole_thick_size = 6+0;
@@ -102,7 +102,6 @@ peg_hole_thread_d1 = 7+0;
 peg_hole_thread_d2 = peg_hole_thick_size+0;
 peg_hole_thread_h1 = 0.77+0;
 peg_hole_thread_h2 = peg_hole_thread_pitch-0.5;
-peg_hole_thread_fn = 32+0;
 
 // Distance between stacked layers.  There should be at least one empty
 // layer between adjacent tiles.  If the height of a single tile is not
@@ -149,6 +148,7 @@ module multiboard_tile(x_cells, y_cells, right_peg_holes, top_peg_holes) {
 
 
 module multiboard_cell(with_peg_hole) {
+  $fn=default_fn;
   difference() {
     multiboard_cell_base(with_peg_hole);
     translate([cell_size/2, cell_size/2, 0])
@@ -184,7 +184,7 @@ module multiboard_cell_base(with_peg_hole) {
 
 
 module multihole() {
-  multihole_base();
+  multihole_base($fn=multihole_base_fn);
   // The rotation here isn't strictly necessary, but it makes the threads
   // line up with the Multiboard STEP files, which, in turn, makes
   // debugging easier.
@@ -199,8 +199,7 @@ module multihole_base() {
     tapered_hole_base(
       multihole_thin_bound_circle_d / 2,
       multihole_thick_bound_circle_d / 2,
-      multihole_thick_height,
-      multihole_base_fn);
+      multihole_thick_height);
 }
 
 
@@ -209,8 +208,7 @@ module multihole_threads() {
     trapz_thread(multihole_thread_d1, multihole_thread_d2,
                  multihole_thread_h1, multihole_thread_h2,
                  thread_len=height+multihole_thread_h2,
-                 pitch=multihole_thread_pitch,
-                 $fn=multihole_thread_fn);
+                 pitch=multihole_thread_pitch);
 }
 
 
@@ -229,8 +227,7 @@ module peg_hole_base() {
   tapered_hole_base(
     peg_hole_thin_size / 2,
     peg_hole_thick_size / 2,
-    peg_hole_thick_height,
-    peg_hole_thread_fn);
+    peg_hole_thick_height);
 }
 
 
@@ -242,14 +239,13 @@ module peg_hole_threads() {
       trapz_thread(peg_hole_thread_d1, peg_hole_thread_d2,
                    peg_hole_thread_h1, peg_hole_thread_h2,
                    thread_len=height+peg_hole_thread_h2,
-                   pitch=peg_hole_thread_pitch,
-                   $fn=peg_hole_thread_fn);
+                   pitch=peg_hole_thread_pitch);
   }
 }
 
 
-module tapered_hole_base(outer_offset, inner_offset, thick_height, fn) {
-  rotate_extrude($fn=fn)
+module tapered_hole_base(outer_offset, inner_offset, thick_height) {
+  rotate_extrude()
     polygon([
       [0,            -layer_separation],
       [outer_offset, -layer_separation],
