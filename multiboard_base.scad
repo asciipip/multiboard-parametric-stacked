@@ -104,7 +104,10 @@ peg_hole_thread_h1 = 0.77+0;
 peg_hole_thread_h2 = peg_hole_thread_pitch-0.5;
 peg_hole_thread_fn = 32+0;
 
-// Distance between stacked layers
+// Distance between stacked layers.  There should be at least one empty
+// layer between adjacent tiles.  If the height of a single tile is not
+// evenly divisible by the layer thickness, we might need more space than
+// just the layer thickness to make sure that happens.
 layer_separation = abs(-height % layer_thickness) + layer_thickness;
 stack_height = height + layer_separation;
 
