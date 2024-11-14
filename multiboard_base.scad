@@ -194,22 +194,13 @@ module multihole() {
 
 
 module multihole_base() {
-  outer_offset = multihole_thin_bound_circle_d / 2;
-  inner_offset = multihole_thick_bound_circle_d / 2;
-
   // Rotation needed to align the hole sides with the cell's outer sides.
   rotate(22.5, [0, 0, 1])
-    rotate_extrude($fn=multihole_base_fn)
-    polygon([
-      [0,            -layer_separation],
-      [outer_offset, -layer_separation],
-      [outer_offset, 0],
-      [inner_offset, (height - multihole_thick_height)/2],
-      [inner_offset, (height + multihole_thick_height)/2],
-      [outer_offset, height],
-      [outer_offset, stack_height],
-      [0,            stack_height],
-    ]);
+    tapered_hole_base(
+      multihole_thin_bound_circle_d / 2,
+      multihole_thick_bound_circle_d / 2,
+      multihole_thick_height,
+      multihole_base_fn);
 }
 
 
@@ -235,20 +226,11 @@ module peg_hole() {
 
 
 module peg_hole_base() {
-  outer_offset = peg_hole_thin_size / 2;
-  inner_offset = peg_hole_thick_size / 2;
-
-  rotate_extrude($fn=peg_hole_thread_fn)
-    polygon([
-      [0,            -layer_separation],
-      [outer_offset, -layer_separation],
-      [outer_offset, 0],
-      [inner_offset, (height - peg_hole_thick_height)/2],
-      [inner_offset, (height + peg_hole_thick_height)/2],
-      [outer_offset, height],
-      [outer_offset, stack_height],
-      [0,            stack_height],
-    ]);
+  tapered_hole_base(
+    peg_hole_thin_size / 2,
+    peg_hole_thick_size / 2,
+    peg_hole_thick_height,
+    peg_hole_thread_fn);
 }
 
 
@@ -263,6 +245,21 @@ module peg_hole_threads() {
                    pitch=peg_hole_thread_pitch,
                    $fn=peg_hole_thread_fn);
   }
+}
+
+
+module tapered_hole_base(outer_offset, inner_offset, thick_height, fn) {
+  rotate_extrude($fn=fn)
+    polygon([
+      [0,            -layer_separation],
+      [outer_offset, -layer_separation],
+      [outer_offset, 0],
+      [inner_offset, (height - thick_height)/2],
+      [inner_offset, (height + thick_height)/2],
+      [outer_offset, height],
+      [outer_offset, stack_height],
+      [0,            stack_height],
+    ]);
 }
 
 
