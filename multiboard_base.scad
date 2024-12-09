@@ -135,16 +135,19 @@ module multiboard_tile_stack(tile_count, x_cells, y_cells, right_peg_holes, top_
 module multiboard_tile(x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions) {
   for (i=[0:x_cells-1])
     for (j=[0:y_cells-1])
-      let (has_diagonal_neighbor = cell_at_coords(i + 1, j + 1, x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions),
+      // A pretty good rule of thumb is that there should be a peg hole
+      // between every two diagonally adjacent multiholes.
+      let (render_this_cell = cell_at_coords(i, j, x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions),
+           has_diagonal_neighbor = cell_at_coords(i + 1, j + 1, x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions),
            has_adjacent_neighbors =
              cell_at_coords(i + 1, j, x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions) &&
              cell_at_coords(i, j + 1, x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions))
         translate([i*cell_size, j*cell_size, 0])
-        if (!is_num(search([[i, j]], exceptions)[0])) {
-          multiboard_cell(with_peg_hole=has_diagonal_neighbor || has_adjacent_neighbors);
-        } else if (has_adjacent_neighbors) {
-          standalone_peg_hole();
-        }
+          if (render_this_cell) {
+            multiboard_cell(with_peg_hole=has_diagonal_neighbor || has_adjacent_neighbors);
+          } else if (has_adjacent_neighbors) {
+            standalone_peg_hole();
+          }
 }
 
 
