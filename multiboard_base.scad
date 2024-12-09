@@ -135,16 +135,16 @@ module multiboard_tile_stack(tile_count, x_cells, y_cells, right_peg_holes, top_
 module multiboard_tile(x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions) {
   for (i=[0:x_cells-1])
     for (j=[0:y_cells-1])
-      let (in_right_column = i == x_cells-1,
-           in_top_row = j == y_cells-1,
-           with_peg_hole =
-             (!in_right_column && !in_top_row) ||
-             ( in_right_column && !in_top_row && right_peg_holes) ||
-             (!in_right_column &&  in_top_row && top_peg_holes) ||
-             ( in_right_column &&  in_top_row && right_peg_holes && top_peg_holes))
+      let (has_diagonal_neighbor = cell_at_coords(i + 1, j + 1, x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions),
+           has_adjacent_neighbors =
+             cell_at_coords(i + 1, j, x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions) &&
+             cell_at_coords(i, j + 1, x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions))
         translate([i*cell_size, j*cell_size, 0])
-          if (!is_num(search([[i, j]], exceptions)[0]))
-            multiboard_cell(with_peg_hole=with_peg_hole);
+        if (!is_num(search([[i, j]], exceptions)[0])) {
+          multiboard_cell(with_peg_hole=has_diagonal_neighbor || has_adjacent_neighbors);
+        } else if (has_adjacent_neighbors) {
+          standalone_peg_hole();
+        }
 }
 
 
@@ -181,6 +181,23 @@ module multiboard_cell_base(with_peg_hole) {
     : base_points;
   linear_extrude(height)
     polygon(points);
+}
+
+
+module standalone_peg_hole() {
+  $fn=default_fn;
+  points = [
+    [cell_size,                 cell_size - size_l_offset],
+    [cell_size + size_l_offset, cell_size],
+    [cell_size,                 cell_size + size_l_offset],
+    [cell_size - size_l_offset, cell_size],
+  ];
+  difference() {
+    linear_extrude(height)
+      polygon(points);
+    translate([cell_size, cell_size, 0])
+      peg_hole();
+  }
 }
 
 
@@ -316,3 +333,9 @@ function spiral_segment_paths(profile_points_count, segment_number) =
 
 function limit_point_number(point, profile_points_count) =
   point >= profile_points_count ? point - profile_points_count : point;
+
+
+function cell_at_coords(x, y, x_cells, y_cells, add_right_column, add_top_row, exceptions) =
+  (0 <= x && x < (add_right_column ? x_cells + 1 : x_cells)) &&
+  (0 <= y && y < (add_top_row ? y_cells + 1 : y_cells)) &&
+  (!is_num(search([[x, y]], exceptions)[0]));

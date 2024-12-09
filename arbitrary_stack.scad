@@ -14,7 +14,11 @@
 // The exceptions element is optional.  If present, it should be a list of
 // x, y pairs.  Each pair indicates a cell that should *not* be generated
 // in the model.  Cells are zero-indexed.  [0, 0] is the cell in the lower
-// left corner of the tile.
+// left corner of the tile.  Note that you can add exceptions for the
+// cells in the row and column just past the dimensions of a tile; this
+// will cause some of the teeth on the edge of the tile to be suppressed
+// in the same way they would be if cells internal to the tile were being
+// omitted.
 //
 // Warning: This model will create whatever you tell it to.  It's up to
 // you to make sure your tiles are all supported.
