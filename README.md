@@ -98,8 +98,10 @@ tiles.
 
 The `arbitrary_stack.scad` file can be used to create a stack of tiles
 with arbitrary shapes and dimensions.  You need to put the tile
-definitions in the `tiles` array.  See the comment at the top of the file
-for more information.
+definitions in the `tiles` array.  Tile definitions can include lists of
+cells to omit from the generated model.
+
+See the comment at the top of the file for more information.
 
 
 ## Tile Generating Program

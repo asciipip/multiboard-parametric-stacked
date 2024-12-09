@@ -3,13 +3,18 @@
 // Array of tile shapes.
 //
 // Each array element should be:
-//   [count, x_cells, y_cells, shape]
+//   [count, x_cells, y_cells, shape, exceptions]
 //
 // Valid shapes are:
 //  * "core"
 //  * "side" (for a top or bottom side with the teeth on the right)
 //  * "rotated side" (for a left or right side with the teeth on the top)
 //  * "corner"
+//
+// The exceptions element is optional.  If present, it should be a list of
+// x, y pairs.  Each pair indicates a cell that should *not* be generated
+// in the model.  Cells are zero-indexed.  [0, 0] is the cell in the lower
+// left corner of the tile.
 //
 // Warning: This model will create whatever you tell it to.  It's up to
 // you to make sure your tiles are all supported.
@@ -18,7 +23,7 @@ tiles = [
   [4, 4, 4, "core"],
   [3, 4, 4, "side"],
   [2, 4, 3, "rotated side"],
-  [1, 3, 3, "corner"]
+  [1, 3, 3, "corner", [[1, 1], [2, 1]]]
 ];
 
 /* [Print Settings] */
@@ -43,20 +48,21 @@ module tile_group(offset, tile_params) {
   x_cells = tile_params[1];
   y_cells = tile_params[2];
   shape = tile_params[3];
+  exceptions = tile_params[4];
   assert(x_cells >= 1, "X dimension must be at least 1");
   assert(y_cells >= 1, "Y dimension must be at least 1");
   translate([0, 0, offset * stack_height])
     for (level = [0:1:count-1])
       translate([0, 0, level * stack_height])
-        generic_tile(x_cells, y_cells, shape);
+        generic_tile(x_cells, y_cells, shape, exceptions);
 }
 
 
-module generic_tile(x_cells, y_cells, shape) {
-       if (shape == "core")         {multiboard_tile(x_cells, y_cells, right_peg_holes=true, top_peg_holes=true);}
-  else if (shape == "side")         {multiboard_tile(x_cells, y_cells, right_peg_holes=true, top_peg_holes=false);}
-  else if (shape == "rotated side") {multiboard_tile(x_cells, y_cells, right_peg_holes=false, top_peg_holes=true);}
-  else if (shape == "corner")       {multiboard_tile(x_cells, y_cells, right_peg_holes=false, top_peg_holes=false);}
+module generic_tile(x_cells, y_cells, shape, exceptions) {
+  if (shape == "core")         {multiboard_tile(x_cells, y_cells, right_peg_holes=true, top_peg_holes=true, exceptions=exceptions);}
+  else if (shape == "side")         {multiboard_tile(x_cells, y_cells, right_peg_holes=true, top_peg_holes=false, exceptions=exceptions);}
+  else if (shape == "rotated side") {multiboard_tile(x_cells, y_cells, right_peg_holes=false, top_peg_holes=true, exceptions=exceptions);}
+  else if (shape == "corner")       {multiboard_tile(x_cells, y_cells, right_peg_holes=false, top_peg_holes=false, exceptions=exceptions);}
   else {
     assert(false, "Unknown tile shape");
   }

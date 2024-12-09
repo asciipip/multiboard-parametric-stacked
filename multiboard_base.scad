@@ -124,15 +124,15 @@ translate([0, 0, stack_height * (core_tiles + side_tiles)])
 
 // Now, all the modules the stack uses
 
-module multiboard_tile_stack(tile_count, x_cells, y_cells, right_peg_holes, top_peg_holes) {
+module multiboard_tile_stack(tile_count, x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions) {
   if (tile_count > 0)
     for (level = [0:tile_count-1])
       translate([0, 0, stack_height * level])
-        multiboard_tile(x_cells, y_cells, right_peg_holes, top_peg_holes);
+        multiboard_tile(x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions);
 }
 
 
-module multiboard_tile(x_cells, y_cells, right_peg_holes, top_peg_holes) {
+module multiboard_tile(x_cells, y_cells, right_peg_holes, top_peg_holes, exceptions) {
   for (i=[0:x_cells-1])
     for (j=[0:y_cells-1])
       let (in_right_column = i == x_cells-1,
@@ -143,7 +143,8 @@ module multiboard_tile(x_cells, y_cells, right_peg_holes, top_peg_holes) {
              (!in_right_column &&  in_top_row && top_peg_holes) ||
              ( in_right_column &&  in_top_row && right_peg_holes && top_peg_holes))
         translate([i*cell_size, j*cell_size, 0])
-          multiboard_cell(with_peg_hole=with_peg_hole);
+          if (!is_num(search([[i, j]], exceptions)[0]))
+            multiboard_cell(with_peg_hole=with_peg_hole);
 }
 
 
