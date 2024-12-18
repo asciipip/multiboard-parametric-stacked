@@ -209,8 +209,9 @@ module multihole() {
   // The rotation here isn't strictly necessary, but it makes the threads
   // line up with the Multiboard STEP files, which, in turn, makes
   // debugging easier.
-  rotate(-170, [0, 0, 1])
-    multihole_threads();
+  if (!$preview)
+    rotate(-170, [0, 0, 1])
+      multihole_threads();
 }
 
 
@@ -239,7 +240,8 @@ module peg_hole() {
   // debugging easier.
   rotate(-129, [0, 0, 1]) {
     peg_hole_base();
-    peg_hole_threads();
+    if (!$preview)
+      peg_hole_threads();
   }
 }
 
