@@ -11,12 +11,21 @@ import sys
 
 
 CELL_SIZE_MM = 25
+MULTIHOLE_OUTER_SIZE_MM = 23.4
+MULTIHOLE_INNER_SIZE_MM = 21.4
+PEG_HOLE_OUTER_SIZE_MM = 7.5
+PEG_HOLE_INNER_SIZE_MM = 6.0
 TOOTH_EXTRA_MM = 8
 MAX_DEFAULT_TILE_SIZE = 8
 STACK_SCAD_FILE = pathlib.Path(__file__)\
                          .resolve()\
                          .parent\
                          .joinpath('arbitrary_stack.scad')
+MULTIHOLE_BLOCK_NAME = 'multihole'
+PEG_HOLE_BLOCK_NAME = 'peg-hole'
+TILE_LAYER_NAME = 'tiles'
+HOLE_LAYER_NAME = 'holes'
+AREA_LAYER_NAME = 'area'
 
 
 TileGroup = collections.namedtuple('TileGroup', ['count', 'width', 'height', 'shape'])
@@ -265,22 +274,33 @@ def generate_dxf(stacks, args):
     import ezdxf
 
     dxf_file = ezdxf.new()
-    msp = dxf_file.modelspace()
+    dxf_file.layers.add(TILE_LAYER_NAME)
+    dxf_file.layers.add(AREA_LAYER_NAME, linetype='DOT2')
 
+    dxf_add_holes(dxf_file)
     core_block_name   = dxf_add_tile(dxf_file, 'core',   args.tile_width,        args.tile_height)
     side_block_name   = dxf_add_tile(dxf_file, 'side',   right_tile_width(args), args.tile_height)
     top_block_name    = dxf_add_tile(dxf_file, 'top',    args.tile_width,        top_tile_height(args))
     corner_block_name = dxf_add_tile(dxf_file, 'corner', right_tile_width(args), top_tile_height(args))
 
+    msp = dxf_file.modelspace()
     x_tiles, y_tiles = board_tile_dimensions(args)
     for x in range(0, x_tiles - 1):
         for y in range(0, y_tiles - 1):
-            msp.add_blockref(core_block_name, (x * args.tile_width * CELL_SIZE_MM, y * args.tile_height * CELL_SIZE_MM))
+            msp.add_blockref(core_block_name,
+                             (x * args.tile_width * CELL_SIZE_MM, y * args.tile_height * CELL_SIZE_MM),
+                             dxfattribs={'layer': TILE_LAYER_NAME})
     for y in range(0, y_tiles - 1):
-        msp.add_blockref(side_block_name, ((x_tiles - 1) * args.tile_width * CELL_SIZE_MM, y * args.tile_height * CELL_SIZE_MM))
+        msp.add_blockref(side_block_name,
+                         ((x_tiles - 1) * args.tile_width * CELL_SIZE_MM, y * args.tile_height * CELL_SIZE_MM),
+                         dxfattribs={'layer': TILE_LAYER_NAME})
     for x in range(0, x_tiles - 1):
-        msp.add_blockref(top_block_name, (x * args.tile_width * CELL_SIZE_MM, (y_tiles - 1) * args.tile_height * CELL_SIZE_MM))
-    msp.add_blockref(corner_block_name, ((x_tiles - 1) * args.tile_width * CELL_SIZE_MM, (y_tiles - 1) * args.tile_height * CELL_SIZE_MM))
+        msp.add_blockref(top_block_name,
+                         (x * args.tile_width * CELL_SIZE_MM, (y_tiles - 1) * args.tile_height * CELL_SIZE_MM),
+                         dxfattribs={'layer': TILE_LAYER_NAME})
+    msp.add_blockref(corner_block_name,
+                     ((x_tiles - 1) * args.tile_width * CELL_SIZE_MM, (y_tiles - 1) * args.tile_height * CELL_SIZE_MM),
+                     dxfattribs={'layer': TILE_LAYER_NAME})
 
     area_origin = (-(args.width_mm % CELL_SIZE_MM) / 2, -(args.height_mm % CELL_SIZE_MM) / 2)
     msp.add_lwpolyline([
@@ -289,13 +309,16 @@ def generate_dxf(stacks, args):
         (area_origin[0] + args.width_mm, area_origin[1] + args.height_mm),
         (area_origin[0], area_origin[1] + args.height_mm),
     ],
-                       close=True)
+                       close=True,
+                       dxfattribs={'layer': AREA_LAYER_NAME})
 
     dxf_file.set_modelspace_vport(args.height_mm, (args.width_mm / 2, args.height_mm / 2))
     dxf_file.saveas('Stack.dxf')
 
 
 def dxf_add_tile(dxf_file, tile_type, tile_width, tile_height):
+    import ezdxf
+
     octagon_side = CELL_SIZE_MM / (1 + 2 * math.cos(math.pi / 4))
     side_offset = (CELL_SIZE_MM - octagon_side) / 2
 
@@ -337,9 +360,49 @@ def dxf_add_tile(dxf_file, tile_type, tile_width, tile_height):
         points.append((cell_x, cell_y + side_offset))
         points.append((cell_x + x_offset, cell_y))
     block.add_lwpolyline(points, close=True)
+
+    for x in range(0, tile_width):
+        for y in range(0, tile_height):
+            block.add_blockref(MULTIHOLE_BLOCK_NAME,
+                               ((x + 0.5) * CELL_SIZE_MM, (y + 0.5) * CELL_SIZE_MM),
+                               dxfattribs={'layer': HOLE_LAYER_NAME})
+            if (tile_type == 'core') \
+               or (tile_type == 'side' and x < tile_width - 1) \
+               or (tile_type == 'top' and y < tile_height - 1) \
+               or (x < tile_width - 1 and y < tile_height - 1):
+                block.add_blockref(PEG_HOLE_BLOCK_NAME,
+                                   ((x + 1) * CELL_SIZE_MM, (y + 1) * CELL_SIZE_MM),
+                                   dxfattribs={'layer': HOLE_LAYER_NAME})
+            
     return block_name
 
-    
+
+def dxf_add_holes(dxf_file):
+    import ezdxf
+    dxf_file.layers.add(HOLE_LAYER_NAME, true_color=ezdxf.rgb2int((127, 127, 127)))
+
+    multihole_block = dxf_file.blocks.new(MULTIHOLE_BLOCK_NAME)
+    multihole_outer_side = MULTIHOLE_OUTER_SIZE_MM / (1 + 2 * math.cos(math.pi / 4))
+    multihole_outer_corner_distance = multihole_outer_side / math.sin(math.pi / 8) / 2;
+    multihole_inner_side = MULTIHOLE_INNER_SIZE_MM / (1 + 2 * math.cos(math.pi / 4))
+    multihole_inner_corner_distance = multihole_inner_side / math.sin(math.pi / 8) / 2;
+
+    outer_points = []
+    inner_points = []
+    for i in range(0, 8):
+        angle = i * math.pi / 4 + math.pi / 8
+        outer_points.append((multihole_outer_corner_distance * math.cos(angle), multihole_outer_corner_distance * math.sin(angle)))
+        inner_points.append((multihole_inner_corner_distance * math.cos(angle), multihole_inner_corner_distance * math.sin(angle)))
+    multihole_block.add_lwpolyline(outer_points, close=True)
+    multihole_block.add_lwpolyline(inner_points, close=True)
+    for op, ip in zip(outer_points, inner_points):
+        multihole_block.add_line(op, ip)
+
+    peg_hole_block = dxf_file.blocks.new(PEG_HOLE_BLOCK_NAME)
+    peg_hole_block.add_circle((0, 0), PEG_HOLE_OUTER_SIZE_MM / 2)
+    peg_hole_block.add_circle((0, 0), PEG_HOLE_INNER_SIZE_MM / 2)
+
+
 def board_tile_dimensions(args):
     return (
         math.ceil(args.width / args.tile_width),
