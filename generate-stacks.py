@@ -27,6 +27,8 @@ def main():
     show_dimensions(args)
     stacks = determine_stacks(args)
     confirm_stacks(stacks, args)
+    if args.dxf:
+        generate_dxf(stacks, args)
     if args.stl:
         generate_stacks(stacks, args)
 
@@ -64,7 +66,9 @@ tiles; side and corner tiles might be truncated to fit in the space.""",
     parser.add_argument('--max-tile-size', type=int, metavar='CELLS',
                         help='Maximum size of a tile side in cells; default {}'.format(MAX_DEFAULT_TILE_SIZE))
     parser.add_argument('-y', '--yes', action='store_true',
-                        help='Don\'t prompt before generating STLs')
+                        help='Don\'t prompt before generating output files')
+    parser.add_argument('--dxf', action=argparse.BooleanOptionalAction, default=False,
+                        help='Generate a DXF file of the tile layout')
     parser.add_argument('--stl', action=argparse.BooleanOptionalAction, default=True,
                         help='Generate one or more STLs containing stacked tiles')
     args = parser.parse_args()
@@ -222,14 +226,15 @@ def confirm_stacks(stacks, args):
     if len(errors) > 0:
         exit(1)
 
+    if args.stl or args.dxf:
+        if not args.yes:
+            print()
+            answer = input('Okay to proceed? [Y/n] ')
+            if answer != '' and answer.lower() != 'y' and answer.lower() != 'yes':
+                exit(1)
+
 
 def generate_stacks(stacks, args):
-    if not args.yes:
-        print()
-        answer = input('Okay to proceed? [Y/n] ')
-        if answer != '' and answer.lower() != 'y' and answer.lower() != 'yes':
-            exit(1)
-
     print()
 
     if shutil.which('openscad') is None:
@@ -256,6 +261,85 @@ def generate_stacks(stacks, args):
         print()
 
 
+def generate_dxf(stacks, args):
+    import ezdxf
+
+    dxf_file = ezdxf.new()
+    msp = dxf_file.modelspace()
+
+    core_block_name   = dxf_add_tile(dxf_file, 'core',   args.tile_width,        args.tile_height)
+    side_block_name   = dxf_add_tile(dxf_file, 'side',   right_tile_width(args), args.tile_height)
+    top_block_name    = dxf_add_tile(dxf_file, 'top',    args.tile_width,        top_tile_height(args))
+    corner_block_name = dxf_add_tile(dxf_file, 'corner', right_tile_width(args), top_tile_height(args))
+
+    x_tiles, y_tiles = board_tile_dimensions(args)
+    for x in range(0, x_tiles - 1):
+        for y in range(0, y_tiles - 1):
+            msp.add_blockref(core_block_name, (x * args.tile_width * CELL_SIZE_MM, y * args.tile_height * CELL_SIZE_MM))
+    for y in range(0, y_tiles - 1):
+        msp.add_blockref(side_block_name, ((x_tiles - 1) * args.tile_width * CELL_SIZE_MM, y * args.tile_height * CELL_SIZE_MM))
+    for x in range(0, x_tiles - 1):
+        msp.add_blockref(top_block_name, (x * args.tile_width * CELL_SIZE_MM, (y_tiles - 1) * args.tile_height * CELL_SIZE_MM))
+    msp.add_blockref(corner_block_name, ((x_tiles - 1) * args.tile_width * CELL_SIZE_MM, (y_tiles - 1) * args.tile_height * CELL_SIZE_MM))
+
+    area_origin = (-(args.width_mm % CELL_SIZE_MM) / 2, -(args.height_mm % CELL_SIZE_MM) / 2)
+    msp.add_lwpolyline([
+        area_origin,
+        (area_origin[0] + args.width_mm, area_origin[1]),
+        (area_origin[0] + args.width_mm, area_origin[1] + args.height_mm),
+        (area_origin[0], area_origin[1] + args.height_mm),
+    ],
+                       close=True)
+
+    dxf_file.set_modelspace_vport(args.height_mm, (args.width_mm / 2, args.height_mm / 2))
+    dxf_file.saveas('Stack.dxf')
+
+
+def dxf_add_tile(dxf_file, tile_type, tile_width, tile_height):
+    octagon_side = CELL_SIZE_MM / (1 + 2 * math.cos(math.pi / 4))
+    side_offset = (CELL_SIZE_MM - octagon_side) / 2
+
+    block_name = 'tile-{}-{}x{}'.format(tile_type, tile_width, tile_height)
+    block = dxf_file.blocks.new(block_name)
+    points = []
+    for x in range(0, tile_width):
+        cell_x = x * CELL_SIZE_MM
+        cell_y = 0
+        y_offset = side_offset
+        points.append((cell_x + side_offset, cell_y))
+        points.append((cell_x + CELL_SIZE_MM - side_offset, cell_y))
+        points.append((cell_x + CELL_SIZE_MM, cell_y + y_offset))
+    for y in range(0, tile_height):
+        cell_x = tile_width * CELL_SIZE_MM
+        cell_y = y * CELL_SIZE_MM
+        if tile_type in set(['core', 'top']):
+            x_offset = side_offset
+        else:
+            x_offset = -side_offset
+        points.append((cell_x, cell_y + side_offset))
+        points.append((cell_x, cell_y + CELL_SIZE_MM - side_offset))
+        points.append((cell_x + x_offset, cell_y + CELL_SIZE_MM))
+    for x in range(tile_width, 0, -1):
+        cell_x = (x - 1) * CELL_SIZE_MM
+        cell_y = tile_height * CELL_SIZE_MM
+        if tile_type in set(['core', 'side']):
+            y_offset = side_offset
+        else:
+            y_offset = -side_offset
+        points.append((cell_x + CELL_SIZE_MM, cell_y + y_offset))
+        points.append((cell_x + CELL_SIZE_MM - side_offset, cell_y))
+        points.append((cell_x + side_offset, cell_y))
+    for y in range(tile_height, 0, -1):
+        cell_x = 0
+        cell_y = (y - 1) * CELL_SIZE_MM
+        x_offset = side_offset
+        points.append((cell_x, cell_y + CELL_SIZE_MM - side_offset))
+        points.append((cell_x, cell_y + side_offset))
+        points.append((cell_x + x_offset, cell_y))
+    block.add_lwpolyline(points, close=True)
+    return block_name
+
+    
 def board_tile_dimensions(args):
     return (
         math.ceil(args.width / args.tile_width),
