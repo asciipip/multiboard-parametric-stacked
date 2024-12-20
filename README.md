@@ -137,6 +137,13 @@ Which would print the following before generating the tile stacks described:
       Stack 2 [Stack-3x5x7_right.stl]:
         3 Right Side 5×7 tiles
 
+Also of note is the `--dxf` parameter you can pass to generate a DXF file
+of the board layout.  The author uses these files as bases for detailed
+project planning.  You will need to have the [ezdxf][] Python module
+installed.
+
+  [ezdxf]: https://ezdxf.mozman.at/
+
 
 ## Credits
 
