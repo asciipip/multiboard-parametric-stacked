@@ -71,15 +71,17 @@ tiles; side and corner tiles might be truncated to fit in the space.""",
     parser.add_argument('--tile-height', metavar='CELLS',
                         type=int, help='Height of each tile, in cells')
     parser.add_argument('--max-tile-size-mm', type=float, metavar='MM',
-                        help='Maximum size of a tile side in mm; default {}'.format(CELL_SIZE_MM * MAX_DEFAULT_TILE_SIZE))
+                        help='Maximum size of a tile side in mm (default: {})'.format(CELL_SIZE_MM * MAX_DEFAULT_TILE_SIZE))
     parser.add_argument('--max-tile-size', type=int, metavar='CELLS',
-                        help='Maximum size of a tile side in cells; default {}'.format(MAX_DEFAULT_TILE_SIZE))
+                        help='Maximum size of a tile side in cells (default: {})'.format(MAX_DEFAULT_TILE_SIZE))
     parser.add_argument('-y', '--yes', action='store_true',
                         help='Don\'t prompt before generating output files')
     parser.add_argument('--dxf', action=argparse.BooleanOptionalAction, default=False,
                         help='Generate a DXF file of the tile layout')
     parser.add_argument('--stl', action=argparse.BooleanOptionalAction, default=True,
                         help='Generate one or more STLs containing stacked tiles')
+    parser.add_argument('-p', '--filename-prefix', default='Stack',
+                        help='Text used to determine the name of generated files (default: Stack)')
     args = parser.parse_args()
 
     if args.help:
@@ -215,7 +217,7 @@ def confirm_stacks(stacks, args):
         '' if len(stacks) == 1 else 's'))
     for i, stack in enumerate(stacks):
         print()
-        print('  Stack {} [{}]:'.format(i + 1, stack_name(stack)))
+        print('  Stack {} [{}]:'.format(i + 1, stack_name(stack, args)))
         for tile_group in stack:
             print('    {} {} {}×{} tile{}'.format(
                 tile_group.count,
@@ -252,7 +254,7 @@ def generate_stacks(stacks, args):
         exit(1)
 
     for stack in stacks:
-        stack_path = pathlib.Path(stack_name(stack))
+        stack_path = pathlib.Path(stack_name(stack, args))
         if stack_path.exists() and not args.yes:
             yn = input('{} exists; overwrite? [y/N] '.format(stack_path))
             if yn.lower() != 'y' and yn.lower() != 'yes':
@@ -313,7 +315,7 @@ def generate_dxf(stacks, args):
                        dxfattribs={'layer': AREA_LAYER_NAME})
 
     dxf_file.set_modelspace_vport(args.height_mm, (args.width_mm / 2, args.height_mm / 2))
-    dxf_file.saveas('Stack.dxf')
+    dxf_file.saveas('{}.dxf'.format(args.filename_prefix))
 
 
 def dxf_add_tile(dxf_file, tile_type, tile_width, tile_height):
@@ -439,8 +441,8 @@ def right_tile_width(args):
         return args.width % args.tile_width
 
 
-def stack_name(stack):
-    result = 'Stack'
+def stack_name(stack, args):
+    result = args.filename_prefix
     for group in stack:
         if group.shape == 'side':
             shape_name = 'top'
