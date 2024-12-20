@@ -111,8 +111,8 @@ needed to cover a given area.  Run `generate-stacks.py --help` for usage
 information.
 
 You need to have `openscad` in your path for the STL generation to work.
-You can also pass the `-n` or `--dry-run` parameter to just display the
-tiles that could be used to cover the area.
+You can also pass the `--no-stl` parameter to just display the tiles that
+could be used to cover the area.
 
 For example, if you had an area 431 mm by 717 mm, you could run:
 

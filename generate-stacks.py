@@ -27,7 +27,8 @@ def main():
     show_dimensions(args)
     stacks = determine_stacks(args)
     confirm_stacks(stacks, args)
-    generate_stacks(stacks, args)
+    if args.stl:
+        generate_stacks(stacks, args)
 
 
 def parse_args():
@@ -64,17 +65,13 @@ tiles; side and corner tiles might be truncated to fit in the space.""",
                         help='Maximum size of a tile side in cells; default {}'.format(MAX_DEFAULT_TILE_SIZE))
     parser.add_argument('-y', '--yes', action='store_true',
                         help='Don\'t prompt before generating STLs')
-    parser.add_argument('-n', '--dry-run', action='store_true',
-                        help='Display board parameters but don\'t generate STLs')
+    parser.add_argument('--stl', action=argparse.BooleanOptionalAction, default=True,
+                        help='Generate one or more STLs containing stacked tiles')
     args = parser.parse_args()
 
     if args.help:
         parser.print_help()
         exit(0)
-
-    if args.yes and args.dry_run:
-        print('--yes and --dry-run are incompatible.', file=sys.stderr)
-        exit(1)
 
     if (args.width_mm is not None and args.width is not None) \
        or (args.height_mm is not None and args.height is not None):
@@ -222,21 +219,17 @@ def confirm_stacks(stacks, args):
         for error in errors:
             print(error)
 
-    if args.dry_run:
-        print()
-        exit(0)
-
     if len(errors) > 0:
         exit(1)
 
+
+def generate_stacks(stacks, args):
     if not args.yes:
         print()
         answer = input('Okay to proceed? [Y/n] ')
         if answer != '' and answer.lower() != 'y' and answer.lower() != 'yes':
             exit(1)
 
-
-def generate_stacks(stacks, args):
     print()
 
     if shutil.which('openscad') is None:
