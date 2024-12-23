@@ -77,9 +77,9 @@ tiles; side and corner tiles might be truncated to fit in the space.""",
     parser.add_argument('-y', '--yes', action='store_true',
                         help='Don\'t prompt before generating output files')
     parser.add_argument('--dxf', action=argparse.BooleanOptionalAction, default=False,
-                        help='Generate a DXF file of the tile layout')
+                        help='Generate a DXF file of the tile layout (default: no DXF file)')
     parser.add_argument('--stl', action=argparse.BooleanOptionalAction, default=True,
-                        help='Generate one or more STLs containing stacked tiles')
+                        help='Generate one or more STLs containing stacked tiles (default: generate STLs)')
     parser.add_argument('-p', '--filename-prefix', default='Stack',
                         help='Text used to determine the name of generated files (default: Stack)')
     args = parser.parse_args()
