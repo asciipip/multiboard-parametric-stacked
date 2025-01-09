@@ -12,7 +12,7 @@ y_cells = 4;
 
 // Number of core tiles (pegboard holes on the right and top)
 core_tiles = 4;
-// Number of side tiles (pegboard holes only on the right)
+// Number of side tiles (pegboard holes only on the top)
 side_tiles = 4;
 // Number of corner tiles (no pegboard holes)
 corner_tiles = 1;
@@ -116,7 +116,7 @@ stack_height = height + layer_separation;
 multiboard_tile_stack(core_tiles, x_cells, y_cells, right_peg_holes=true, top_peg_holes=true);
 
 translate([0, 0, stack_height * core_tiles])
-  multiboard_tile_stack(side_tiles, real_side_x_cells, real_side_y_cells, right_peg_holes=true, top_peg_holes=false);
+  multiboard_tile_stack(side_tiles, real_side_x_cells, real_side_y_cells, right_peg_holes=false, top_peg_holes=true);
 
 translate([0, 0, stack_height * (core_tiles + side_tiles)])
   multiboard_tile_stack(corner_tiles, real_corner_x_cells, real_corner_y_cells, right_peg_holes=false, top_peg_holes=false);

@@ -183,23 +183,23 @@ def determine_stacks(args):
                 height=top_tile_height(args),
                 shape='side'))
     else:
-        if top_tile_count(args) > 0:
-            result[0].append(TileGroup(
-                count=top_tile_count(args),
-                width=args.tile_width,
-                height=top_tile_height(args),
-                shape='side'))
         if right_tile_count(args) > 0:
-            if top_tile_count(args) == 0:
-                # Without the other side piece, this side can go on the main stack
-                right_stack = result[0]
-            else:
-                right_stack = []
-                result.append(right_stack)
-            right_stack.append(TileGroup(
+            result[0].append(TileGroup(
                 count=right_tile_count(args),
                 width=right_tile_width(args),
                 height=args.tile_height,
+                shape='side'))
+        if top_tile_count(args) > 0:
+            if right_tile_count(args) == 0:
+                # Without the other side piece, this side can go on the main stack
+                top_stack = result[0]
+            else:
+                top_stack = []
+                result.append(top_stack)
+            top_stack.append(TileGroup(
+                count=top_tile_count(args),
+                width=args.tile_width,
+                height=top_tile_height(args),
                 shape='rotated side'))
     result[0].append(TileGroup(
         count=1,
@@ -282,7 +282,7 @@ def generate_dxf(stacks, args):
     dxf_add_holes(dxf_file)
     core_block_name   = dxf_add_tile(dxf_file, 'core',   args.tile_width,        args.tile_height)
     side_block_name   = dxf_add_tile(dxf_file, 'side',   right_tile_width(args), args.tile_height)
-    top_block_name    = dxf_add_tile(dxf_file, 'top',    args.tile_width,        top_tile_height(args))
+    top_block_name    = dxf_add_tile(dxf_file, 'side',   top_tile_height(args),  args.tile_width)
     corner_block_name = dxf_add_tile(dxf_file, 'corner', right_tile_width(args), top_tile_height(args))
 
     msp = dxf_file.modelspace()
@@ -298,8 +298,11 @@ def generate_dxf(stacks, args):
                          dxfattribs={'layer': TILE_LAYER_NAME})
     for x in range(0, x_tiles - 1):
         msp.add_blockref(top_block_name,
-                         (x * args.tile_width * CELL_SIZE_MM, (y_tiles - 1) * args.tile_height * CELL_SIZE_MM),
-                         dxfattribs={'layer': TILE_LAYER_NAME})
+                         (x * args.tile_width * CELL_SIZE_MM, y_tiles * args.tile_height * CELL_SIZE_MM),
+                         dxfattribs={
+                             'layer': TILE_LAYER_NAME,
+                             'rotation': -90,
+                         })
     msp.add_blockref(corner_block_name,
                      ((x_tiles - 1) * args.tile_width * CELL_SIZE_MM, (y_tiles - 1) * args.tile_height * CELL_SIZE_MM),
                      dxfattribs={'layer': TILE_LAYER_NAME})
@@ -444,9 +447,9 @@ def right_tile_width(args):
 def stack_name(stack, args):
     result = args.filename_prefix
     for group in stack:
-        if group.shape == 'side':
+        if group.shape == 'rotated side':
             shape_name = 'top'
-        elif group.shape == 'rotated side':
+        elif group.shape == 'side':
             shape_name = 'right'
         else:
             shape_name = group.shape
@@ -468,8 +471,8 @@ def stack_name(stack, args):
 def tile_shape_text(shape):
     return {
         'core': 'Core',
-        'side': 'Top Side',
-        'rotated side': 'Right Side',
+        'side': 'Right Side',
+        'rotated side': 'Top Side',
         'corner': 'Corner'
     }[shape]
 
